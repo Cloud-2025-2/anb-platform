@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/Cloud-2025-2/anb-platform/internal/domain"
 	"github.com/Cloud-2025-2/anb-platform/internal/repo"
 	"github.com/golang-jwt/jwt/v5"
@@ -59,4 +60,8 @@ func (s *Service) Login(email, password string) (*LoginResult, error) {
 		TokenType: "Bearer",
 		ExpiresIn: int(s.expires.Seconds()),
 	}, nil
+}
+
+func (s *Service) DeleteUser(userID uuid.UUID) error {
+	return s.users.DeleteByID(userID)
 }

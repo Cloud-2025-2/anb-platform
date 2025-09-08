@@ -76,7 +76,7 @@ TODO
 ### health-check
 
 ```
-http://localhost:8000/health
+http://localhost:8000/api/health
 ```
 
 ### OpenAPI Documentation

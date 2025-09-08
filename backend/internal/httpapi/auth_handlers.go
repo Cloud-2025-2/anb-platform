@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/Cloud-2025-2/anb-platform/internal/auth"
 	"github.com/Cloud-2025-2/anb-platform/internal/domain"
@@ -43,7 +44,7 @@ func (h *AuthHandlers) SignUp(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
 // Login godoc
@@ -72,4 +73,30 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, result)
+}
+
+// DeleteUser godoc
+// @Summary Delete user account
+// @Description Delete the authenticated user's account. This action is irreversible.
+// @Tags Authentication
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]string "User deleted successfully"
+// @Failure 401 {object} map[string]string "Unauthorized - invalid or missing token"
+// @Failure 404 {object} map[string]string "User not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /auth [delete]
+func (h *AuthHandlers) DeleteUser(c *gin.Context) {
+	uid, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
+		return
+	}
+
+	if err := h.svc.DeleteUser(uid); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{"message": "User deleted successfully"})
 }

@@ -19,7 +19,7 @@ const (
 type Video struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID          uuid.UUID   `gorm:"type:uuid;index;not null"`
-	User            User        `gorm:"constraint:OnDelete:CASCADE"`
+	User            User        `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
 	Title           string      `gorm:"not null"`
 	OriginalURL     string      `gorm:"not null"`     // ruta/URL del archivo subido
 	ProcessedURL    *string                              // se llena cuando termina worker

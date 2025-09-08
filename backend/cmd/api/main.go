@@ -9,6 +9,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	_ "github.com/Cloud-2025-2/anb-platform/docs"
 	"github.com/Cloud-2025-2/anb-platform/internal/auth"
 	"github.com/Cloud-2025-2/anb-platform/internal/config"
 	"github.com/Cloud-2025-2/anb-platform/internal/db"
@@ -17,7 +18,6 @@ import (
 	"github.com/Cloud-2025-2/anb-platform/internal/repo"
 	"github.com/Cloud-2025-2/anb-platform/internal/storage"
 	videosvc "github.com/Cloud-2025-2/anb-platform/internal/video"
-	_ "github.com/Cloud-2025-2/anb-platform/docs"
 )
 
 // @title ANB Rising Stars Showcase API
@@ -43,11 +43,11 @@ import (
 func main() {
 	// Load environment variables from .env file
 	_ = godotenv.Load()
-	
+
 	cfg := config.Load()
 
 	// DB
-	db.Connect() 
+	db.Connect()
 	_ = db.DB.Exec(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`).Error
 	if err := db.DB.AutoMigrate(&domain.User{}, &domain.Video{}, &domain.Vote{}); err != nil {
 		log.Fatal(err)
@@ -74,10 +74,10 @@ func main() {
 
 	// router
 	r := gin.Default()
-	
+
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	
+
 	// Health godoc
 	// @Summary Health check
 	// @Description Check if the API is running
@@ -85,7 +85,7 @@ func main() {
 	// @Produce plain
 	// @Success 200 {string} string "ok"
 	// @Router /health [get]
-	r.GET("/health", func(c *gin.Context) { c.String(200, "ok") })
+	r.GET("/api/health", func(c *gin.Context) { c.String(200, "ok") })
 
 	// Auth
 	r.POST("/api/auth/signup", authH.SignUp)
@@ -102,6 +102,9 @@ func main() {
 
 		// votar requiere JWT (aunque sea /public)
 		api.POST("/public/videos/:id/vote", publicH.Vote)
+
+		// Eliminar usuario para uso en pruebas de Postman
+		api.DELETE("/auth", authH.DeleteUser)
 	}
 
 	// Público sin auth

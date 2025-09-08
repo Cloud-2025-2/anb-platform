@@ -9,7 +9,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Cloud-2025-2/anb-platform/internal/repo"
-	vidsvc "github.com/Cloud-2025-2/anb-platform/internal/video")
+	vidsvc "github.com/Cloud-2025-2/anb-platform/internal/video"
+)
 
 type VideoHandlers struct {
 	users  repo.UserRepository
@@ -41,9 +42,15 @@ func NewVideoHandlers(users repo.UserRepository, videos repo.VideoRepository, sv
 // @Router /videos/upload [post]
 func (h *VideoHandlers) Upload(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
-	if err != nil { c.Status(http.StatusUnauthorized); return }
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 	u, err := h.users.FindByID(uid)
-	if err != nil { c.Status(http.StatusUnauthorized); return }
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 
 	title := c.PostForm("title")
 	file, err := c.FormFile("video_file")
@@ -88,9 +95,15 @@ func (h *VideoHandlers) Upload(c *gin.Context) {
 // @Router /videos [get]
 func (h *VideoHandlers) MyVideos(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
-	if err != nil { c.Status(http.StatusUnauthorized); return }
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 	list, err := h.videos.FindByUser(uid)
-	if err != nil { c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()}); return }
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, list)
 }
 
@@ -110,11 +123,20 @@ func (h *VideoHandlers) MyVideos(c *gin.Context) {
 // @Router /videos/{id} [get]
 func (h *VideoHandlers) Detail(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
-	if err != nil { c.Status(http.StatusUnauthorized); return }
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 	id, err := uuid.Parse(c.Param("id"))
-	if err != nil { c.Status(http.StatusNotFound); return }
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
 	v, err := h.videos.FindByIDForUser(id, uid)
-	if err != nil { c.Status(http.StatusNotFound); return }
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
 	c.JSON(http.StatusOK, v)
 }
 
@@ -133,12 +155,21 @@ func (h *VideoHandlers) Detail(c *gin.Context) {
 // @Router /videos/{id} [delete]
 func (h *VideoHandlers) Delete(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
-	if err != nil { c.Status(http.StatusUnauthorized); return }
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 	id, err := uuid.Parse(c.Param("id"))
-	if err != nil { c.Status(http.StatusNotFound); return }
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
 
 	v, err := h.videos.FindByIDForUser(id, uid)
-	if err != nil { c.Status(http.StatusNotFound); return }
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
 
 	// Regla simple: permitir borrar si no está publicado para votación
 	if v.IsPublicForVote {

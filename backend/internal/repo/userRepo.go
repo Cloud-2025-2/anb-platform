@@ -10,6 +10,7 @@ type UserRepository interface {
 	Create(u *domain.User) error
 	FindByEmail(email string) (*domain.User, error)
 	FindByID(id uuid.UUID) (*domain.User, error)
+	DeleteByID(id uuid.UUID) error
 }
 
 type userRepo struct{ db *gorm.DB }
@@ -28,4 +29,8 @@ func (r *userRepo) FindByID(id uuid.UUID) (*domain.User, error) {
 	var u domain.User
 	if err := r.db.First(&u, "id = ?", id).Error; err != nil { return nil, err }
 	return &u, nil
+}
+
+func (r *userRepo) DeleteByID(id uuid.UUID) error {
+	return r.db.Delete(&domain.User{}, "id = ?", id).Error
 }

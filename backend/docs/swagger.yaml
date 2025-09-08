@@ -181,6 +181,41 @@ info:
   title: ANB Rising Stars Showcase API
   version: "1.0"
 paths:
+  /auth:
+    delete:
+      description: Delete the authenticated user's account. This action is irreversible.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete user account
+      tags:
+      - Authentication
   /auth/login:
     post:
       consumes:

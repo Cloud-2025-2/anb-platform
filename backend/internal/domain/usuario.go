@@ -27,4 +27,5 @@ type User struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 
-	Videos []Video `gorm:"foreignKey:UserID"`}
+	Videos []Video `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+}
