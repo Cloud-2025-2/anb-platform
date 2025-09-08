@@ -39,13 +39,10 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	token, err := h.svc.Login(in.Email, in.Password)
+	result, err := h.svc.Login(in.Email, in.Password)
 	if err != nil {
 		c.Status(http.StatusUnauthorized)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"access_token": token,
-		"token_type":   "Bearer",
-	})
+	c.JSON(http.StatusOK, result)
 }
