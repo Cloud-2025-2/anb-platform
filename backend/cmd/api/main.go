@@ -5,6 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
+	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/Cloud-2025-2/anb-platform/internal/auth"
 	"github.com/Cloud-2025-2/anb-platform/internal/config"
@@ -14,9 +17,33 @@ import (
 	"github.com/Cloud-2025-2/anb-platform/internal/repo"
 	"github.com/Cloud-2025-2/anb-platform/internal/storage"
 	videosvc "github.com/Cloud-2025-2/anb-platform/internal/video"
+	_ "github.com/Cloud-2025-2/anb-platform/docs"
 )
 
+// @title ANB Rising Stars Showcase API
+// @version 1.0
+// @description API REST escalable para la plataforma de descubrimiento de talento de baloncesto de la Asociación Nacional de Baloncesto (ANB)
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name ANB Platform Team
+// @contact.url http://www.anb.com/support
+// @contact.email support@anb.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8000
+// @BasePath /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 func main() {
+	// Load environment variables from .env file
+	_ = godotenv.Load()
+	
 	cfg := config.Load()
 
 	// DB
@@ -47,6 +74,17 @@ func main() {
 
 	// router
 	r := gin.Default()
+	
+	// Swagger documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	
+	// Health godoc
+	// @Summary Health check
+	// @Description Check if the API is running
+	// @Tags Health
+	// @Produce plain
+	// @Success 200 {string} string "ok"
+	// @Router /health [get]
 	r.GET("/health", func(c *gin.Context) { c.String(200, "ok") })
 
 	// Auth

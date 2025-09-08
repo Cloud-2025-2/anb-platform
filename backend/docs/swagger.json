@@ -1,0 +1,936 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API REST escalable para la plataforma de descubrimiento de talento de baloncesto de la Asociación Nacional de Baloncesto (ANB)",
+        "title": "ANB Rising Stars Showcase API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "ANB Platform Team",
+            "url": "http://www.anb.com/support",
+            "email": "support@anb.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8000",
+    "basePath": "/api",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user and generate JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User authentication",
+                "parameters": [
+                    {
+                        "description": "User login credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.LoginIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "schema": {
+                            "$ref": "#/definitions/auth.LoginResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid credentials",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - user does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests - rate limit exceeded",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "description": "Register a new player in the ANB platform",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new player",
+                "parameters": [
+                    {
+                        "description": "User registration data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.SignUpIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User created successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - email already exists",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable entity - password validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/rankings": {
+            "get": {
+                "description": "Get current player rankings based on votes. Can be filtered by city.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Get player rankings",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of rankings to return (default: 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by city",
+                        "name": "city",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Player rankings",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/videos": {
+            "get": {
+                "description": "Get all videos available for public voting",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "List public videos",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of videos to return (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of videos to skip (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of public videos",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Video"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/videos/{id}/vote": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cast a vote for a public video. Requires authentication. One vote per user per video.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Vote for a video",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Video ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Vote registered successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - already voted or invalid video ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - cannot vote on own video",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found or not available for voting",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - duplicate vote",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all videos uploaded by the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Videos"
+                ],
+                "summary": "List user's videos",
+                "responses": {
+                    "200": {
+                        "description": "List of user's videos",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Video"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - access denied",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a video file for processing. Requires authentication.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Videos"
+                ],
+                "summary": "Upload a video",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Video file (MP4, max 100MB)",
+                        "name": "video_file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Video title",
+                        "name": "title",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Video uploaded successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - file validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - user not allowed to upload",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Payload too large - file exceeds 100MB",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported media type - invalid file format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable entity - missing required fields",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get detailed information about a specific video owned by the user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Videos"
+                ],
+                "summary": "Get video details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Video ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video details",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Video"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid video ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - video does not belong to user",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a video owned by the user (only if not published for voting)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Videos"
+                ],
+                "summary": "Delete a video",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Video ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - video cannot be deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "auth.LoginResult": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.Role": {
+            "type": "string",
+            "enum": [
+                "player",
+                "jury",
+                "admin",
+                "public"
+            ],
+            "x-enum-varnames": [
+                "RolePlayer",
+                "RoleJury",
+                "RoleAdmin",
+                "RolePublic"
+            ]
+        },
+        "domain.User": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "passwordHash": {
+                    "description": "solo 1 hash, password2 no se almacena",
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/domain.Role"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "videos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Video"
+                    }
+                }
+            }
+        },
+        "domain.Video": {
+            "type": "object",
+            "properties": {
+                "aspectProc": {
+                    "description": "\"16:9\"",
+                    "type": "string"
+                },
+                "checksumSHA256": {
+                    "type": "string"
+                },
+                "citySnapshot": {
+                    "description": "copia de city del usuario para ranking por ciudad",
+                    "type": "string"
+                },
+                "durationOrigSec": {
+                    "type": "integer"
+                },
+                "durationProcSec": {
+                    "type": "integer"
+                },
+                "hasAudioOrig": {
+                    "type": "boolean"
+                },
+                "heightOrig": {
+                    "type": "integer"
+                },
+                "heightProc": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isPublicForVote": {
+                    "type": "boolean"
+                },
+                "originalURL": {
+                    "description": "ruta/URL del archivo subido",
+                    "type": "string"
+                },
+                "processedAt": {
+                    "type": "string"
+                },
+                "processedURL": {
+                    "description": "se llena cuando termina worker",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.VideoStatus"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "uploadedAt": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/domain.User"
+                },
+                "userID": {
+                    "type": "string"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Vote"
+                    }
+                },
+                "watermark": {
+                    "type": "boolean"
+                },
+                "widthOrig": {
+                    "type": "integer"
+                },
+                "widthProc": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.VideoStatus": {
+            "type": "string",
+            "enum": [
+                "uploaded",
+                "processing",
+                "processed",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "VideoUploaded",
+                "VideoProcessing",
+                "VideoProcessed",
+                "VideoFailed"
+            ]
+        },
+        "domain.Vote": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/domain.User"
+                },
+                "userID": {
+                    "type": "string"
+                },
+                "video": {
+                    "$ref": "#/definitions/domain.Video"
+                },
+                "videoID": {
+                    "type": "string"
+                }
+            }
+        },
+        "httpapi.LoginIn": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "httpapi.SignUpIn": {
+            "type": "object",
+            "required": [
+                "city",
+                "country",
+                "email",
+                "first_name",
+                "last_name",
+                "password1",
+                "password2"
+            ],
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "password1": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "password2": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

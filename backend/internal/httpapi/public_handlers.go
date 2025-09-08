@@ -20,7 +20,17 @@ func NewPublicHandlers(videos repo.VideoRepository, votes repo.VoteRepository, u
 	return &PublicHandlers{videos: videos, votes: votes, users: users}
 }
 
-// GET /api/public/videos?limit=20&offset=0
+// ListVideos godoc
+// @Summary List public videos
+// @Description Get all videos available for public voting
+// @Tags Public
+// @Produce json
+// @Param limit query int false "Number of videos to return (default: 20)"
+// @Param offset query int false "Number of videos to skip (default: 0)"
+// @Success 200 {array} domain.Video "List of public videos"
+// @Failure 400 {object} map[string]string "Bad request - invalid query parameters"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /public/videos [get]
 func (h *PublicHandlers) ListVideos(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
@@ -32,7 +42,21 @@ func (h *PublicHandlers) ListVideos(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
-// POST /api/public/videos/:id/vote  (JWT requerido; tu router ya lo montó bajo /api con middleware)
+// Vote godoc
+// @Summary Vote for a video
+// @Description Cast a vote for a public video. Requires authentication. One vote per user per video.
+// @Tags Public
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Video ID"
+// @Success 200 {object} map[string]string "Vote registered successfully"
+// @Failure 400 {object} map[string]string "Bad request - already voted or invalid video ID"
+// @Failure 401 {object} map[string]string "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]string "Forbidden - cannot vote on own video"
+// @Failure 404 {object} map[string]string "Video not found or not available for voting"
+// @Failure 409 {object} map[string]string "Conflict - duplicate vote"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /public/videos/{id}/vote [post]
 func (h *PublicHandlers) Vote(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil { c.Status(http.StatusUnauthorized); return }
@@ -48,7 +72,17 @@ func (h *PublicHandlers) Vote(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Voto registrado exitosamente."})
 }
 
-// GET /api/public/rankings?city=Bogota&limit=50
+// Rankings godoc
+// @Summary Get player rankings
+// @Description Get current player rankings based on votes. Can be filtered by city.
+// @Tags Public
+// @Produce json
+// @Param limit query int false "Number of rankings to return (default: 50)"
+// @Param city query string false "Filter by city"
+// @Success 200 {array} map[string]interface{} "Player rankings"
+// @Failure 400 {object} map[string]string "Bad request - invalid query parameters"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /public/rankings [get]
 func (h *PublicHandlers) Rankings(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	city := c.DefaultQuery("city", "")

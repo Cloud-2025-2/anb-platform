@@ -1,0 +1,626 @@
+basePath: /api
+definitions:
+  auth.LoginResult:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      token_type:
+        type: string
+    type: object
+  domain.Role:
+    enum:
+    - player
+    - jury
+    - admin
+    - public
+    type: string
+    x-enum-varnames:
+    - RolePlayer
+    - RoleJury
+    - RoleAdmin
+    - RolePublic
+  domain.User:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      createdAt:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: string
+      lastName:
+        type: string
+      passwordHash:
+        description: solo 1 hash, password2 no se almacena
+        type: string
+      role:
+        $ref: '#/definitions/domain.Role'
+      updatedAt:
+        type: string
+      videos:
+        items:
+          $ref: '#/definitions/domain.Video'
+        type: array
+    type: object
+  domain.Video:
+    properties:
+      aspectProc:
+        description: '"16:9"'
+        type: string
+      checksumSHA256:
+        type: string
+      citySnapshot:
+        description: copia de city del usuario para ranking por ciudad
+        type: string
+      durationOrigSec:
+        type: integer
+      durationProcSec:
+        type: integer
+      hasAudioOrig:
+        type: boolean
+      heightOrig:
+        type: integer
+      heightProc:
+        type: integer
+      id:
+        type: string
+      isPublicForVote:
+        type: boolean
+      originalURL:
+        description: ruta/URL del archivo subido
+        type: string
+      processedAt:
+        type: string
+      processedURL:
+        description: se llena cuando termina worker
+        type: string
+      status:
+        $ref: '#/definitions/domain.VideoStatus'
+      title:
+        type: string
+      uploadedAt:
+        type: string
+      user:
+        $ref: '#/definitions/domain.User'
+      userID:
+        type: string
+      votes:
+        items:
+          $ref: '#/definitions/domain.Vote'
+        type: array
+      watermark:
+        type: boolean
+      widthOrig:
+        type: integer
+      widthProc:
+        type: integer
+    type: object
+  domain.VideoStatus:
+    enum:
+    - uploaded
+    - processing
+    - processed
+    - failed
+    type: string
+    x-enum-varnames:
+    - VideoUploaded
+    - VideoProcessing
+    - VideoProcessed
+    - VideoFailed
+  domain.Vote:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      user:
+        $ref: '#/definitions/domain.User'
+      userID:
+        type: string
+      video:
+        $ref: '#/definitions/domain.Video'
+      videoID:
+        type: string
+    type: object
+  httpapi.LoginIn:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  httpapi.SignUpIn:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password1:
+        minLength: 8
+        type: string
+      password2:
+        minLength: 8
+        type: string
+    required:
+    - city
+    - country
+    - email
+    - first_name
+    - last_name
+    - password1
+    - password2
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: support@anb.com
+    name: ANB Platform Team
+    url: http://www.anb.com/support
+  description: API REST escalable para la plataforma de descubrimiento de talento
+    de baloncesto de la Asociación Nacional de Baloncesto (ANB)
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: ANB Rising Stars Showcase API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and generate JWT token
+      parameters:
+      - description: User login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.LoginIn'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Authentication successful
+          schema:
+            $ref: '#/definitions/auth.LoginResult'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - invalid credentials
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not found - user does not exist
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too many requests - rate limit exceeded
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User authentication
+      tags:
+      - Authentication
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Register a new player in the ANB platform
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.SignUpIn'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict - email already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable entity - password validation failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new player
+      tags:
+      - Authentication
+  /public/rankings:
+    get:
+      description: Get current player rankings based on votes. Can be filtered by
+        city.
+      parameters:
+      - description: 'Number of rankings to return (default: 50)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by city
+        in: query
+        name: city
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Player rankings
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad request - invalid query parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get player rankings
+      tags:
+      - Public
+  /public/videos:
+    get:
+      description: Get all videos available for public voting
+      parameters:
+      - description: 'Number of videos to return (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of videos to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of public videos
+          schema:
+            items:
+              $ref: '#/definitions/domain.Video'
+            type: array
+        "400":
+          description: Bad request - invalid query parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List public videos
+      tags:
+      - Public
+  /public/videos/{id}/vote:
+    post:
+      description: Cast a vote for a public video. Requires authentication. One vote
+        per user per video.
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Vote registered successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request - already voted or invalid video ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden - cannot vote on own video
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Video not found or not available for voting
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict - duplicate vote
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Vote for a video
+      tags:
+      - Public
+  /videos:
+    get:
+      description: Get all videos uploaded by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of user's videos
+          schema:
+            items:
+              $ref: '#/definitions/domain.Video'
+            type: array
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden - access denied
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List user's videos
+      tags:
+      - Videos
+  /videos/{id}:
+    delete:
+      description: Delete a video owned by the user (only if not published for voting)
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Video deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - video cannot be deleted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Video not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a video
+      tags:
+      - Videos
+    get:
+      description: Get detailed information about a specific video owned by the user
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Video details
+          schema:
+            $ref: '#/definitions/domain.Video'
+        "400":
+          description: Bad request - invalid video ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden - video does not belong to user
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Video not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get video details
+      tags:
+      - Videos
+  /videos/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a video file for processing. Requires authentication.
+      parameters:
+      - description: Video file (MP4, max 100MB)
+        in: formData
+        name: video_file
+        required: true
+        type: file
+      - description: Video title
+        in: formData
+        name: title
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Video uploaded successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - file validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden - user not allowed to upload
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "413":
+          description: Payload too large - file exceeds 100MB
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "415":
+          description: Unsupported media type - invalid file format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable entity - missing required fields
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload a video
+      tags:
+      - Videos
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

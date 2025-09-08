@@ -21,6 +21,24 @@ func NewVideoHandlers(users repo.UserRepository, videos repo.VideoRepository, sv
 	return &VideoHandlers{users: users, videos: videos, svc: svc}
 }
 
+// Upload godoc
+// @Summary Upload a video
+// @Description Upload a video file for processing. Requires authentication.
+// @Tags Videos
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param video_file formData file true "Video file (MP4, max 100MB)"
+// @Param title formData string true "Video title"
+// @Success 201 {object} map[string]interface{} "Video uploaded successfully"
+// @Failure 400 {object} map[string]string "Bad request - file validation error"
+// @Failure 401 {object} map[string]string "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]string "Forbidden - user not allowed to upload"
+// @Failure 413 {object} map[string]string "Payload too large - file exceeds 100MB"
+// @Failure 415 {object} map[string]string "Unsupported media type - invalid file format"
+// @Failure 422 {object} map[string]string "Unprocessable entity - missing required fields"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /videos/upload [post]
 func (h *VideoHandlers) Upload(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil { c.Status(http.StatusUnauthorized); return }
@@ -57,6 +75,17 @@ func (h *VideoHandlers) Upload(c *gin.Context) {
 	})
 }
 
+// MyVideos godoc
+// @Summary List user's videos
+// @Description Get all videos uploaded by the authenticated user
+// @Tags Videos
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} domain.Video "List of user's videos"
+// @Failure 401 {object} map[string]string "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]string "Forbidden - access denied"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /videos [get]
 func (h *VideoHandlers) MyVideos(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil { c.Status(http.StatusUnauthorized); return }
@@ -65,6 +94,20 @@ func (h *VideoHandlers) MyVideos(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
+// Detail godoc
+// @Summary Get video details
+// @Description Get detailed information about a specific video owned by the user
+// @Tags Videos
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Video ID"
+// @Success 200 {object} domain.Video "Video details"
+// @Failure 400 {object} map[string]string "Bad request - invalid video ID format"
+// @Failure 401 {object} map[string]string "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]string "Forbidden - video does not belong to user"
+// @Failure 404 {object} map[string]string "Video not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /videos/{id} [get]
 func (h *VideoHandlers) Detail(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil { c.Status(http.StatusUnauthorized); return }
@@ -75,6 +118,19 @@ func (h *VideoHandlers) Detail(c *gin.Context) {
 	c.JSON(http.StatusOK, v)
 }
 
+// Delete godoc
+// @Summary Delete a video
+// @Description Delete a video owned by the user (only if not published for voting)
+// @Tags Videos
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Video ID"
+// @Success 200 {object} map[string]interface{} "Video deleted successfully"
+// @Failure 400 {object} map[string]string "Bad request - video cannot be deleted"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Video not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /videos/{id} [delete]
 func (h *VideoHandlers) Delete(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil { c.Status(http.StatusUnauthorized); return }

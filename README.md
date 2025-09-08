@@ -1,7 +1,7 @@
 # Integrantes
-* Ivan Avila - 202216280
-* Ana M. Sánchez - 202013587
-* David Tobón Molina - 202123804
+* Ivan Avila - i.avilag@gmail.com
+* Ana M. Sánchez - am.sanchezm1@uniandes.edu.co
+* David Tobón Molina - d.tobonm2@uniandes.edu.co
 
 # SonarQube
 https://sonarcloud.io/project/overview?id=Cloud-2025-2_anb-platform
