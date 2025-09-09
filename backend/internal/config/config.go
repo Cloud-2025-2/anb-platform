@@ -16,6 +16,8 @@ type Config struct {
 	// Redis
 	RedisAddr     string
 	RedisPassword string
+	// Kafka
+	KafkaBrokers []string
 }
 
 func atoiEnv(k string, def int) int {
@@ -38,7 +40,7 @@ func Load() *Config {
 		host := getenv("POSTGRES_HOST", "localhost")
 		user := getenv("POSTGRES_USER", "proyecto1")
 		pass := getenv("POSTGRES_PASSWORD", "proyecto1")
-		db   := getenv("POSTGRES_DB", "db")
+		db := getenv("POSTGRES_DB", "db")
 		portP := getenv("POSTGRES_PORT", "5432")
 		pgURL = "host=" + host + " user=" + user + " password=" + pass +
 			" dbname=" + db + " port=" + portP + " sslmode=disable"
@@ -49,6 +51,14 @@ func Load() *Config {
 		log.Println("⚠️  JWT_SECRET no definido (usa uno seguro en prod)")
 	}
 
+	brokers := os.Getenv("KAFKA_BROKERS")
+	var kafkaBrokers []string
+	if brokers != "" {
+		kafkaBrokers = []string{brokers}
+	} else {
+		kafkaBrokers = []string{"localhost:9092"} // Default fallback
+	}
+
 	return &Config{
 		AppPort:          port,
 		JWTSecret:        secret,
@@ -56,6 +66,7 @@ func Load() *Config {
 		PostgresURL:      pgURL,
 		RedisAddr:        getenv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:    os.Getenv("REDIS_PASSWORD"),
+		KafkaBrokers:     kafkaBrokers,
 	}
 }
 

@@ -40,7 +40,7 @@ const docTemplate = `{
                 ],
                 "summary": "Delete user account",
                 "responses": {
-                    "200": {
+                    "204": {
                         "description": "User deleted successfully",
                         "schema": {
                             "type": "object",
@@ -743,6 +743,86 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/videos/{id}/publish": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Change video status from \"processed\" to \"published\", making it visible in public videos for voting",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Videos"
+                ],
+                "summary": "Publish a video for voting",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Video ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video published successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - video cannot be published (not in processed state or already published)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - video does not belong to user",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -863,6 +943,9 @@ const docTemplate = `{
                     "description": "se llena cuando termina worker",
                     "type": "string"
                 },
+                "publishedAt": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/domain.VideoStatus"
                 },
@@ -901,12 +984,14 @@ const docTemplate = `{
                 "uploaded",
                 "processing",
                 "processed",
+                "published",
                 "failed"
             ],
             "x-enum-varnames": [
                 "VideoUploaded",
                 "VideoProcessing",
                 "VideoProcessed",
+                "VideoPublished",
                 "VideoFailed"
             ]
         },

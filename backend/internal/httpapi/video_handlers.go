@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/Cloud-2025-2/anb-platform/internal/domain"
 	"github.com/Cloud-2025-2/anb-platform/internal/repo"
 	vidsvc "github.com/Cloud-2025-2/anb-platform/internal/video"
 )
@@ -171,9 +172,9 @@ func (h *VideoHandlers) Delete(c *gin.Context) {
 		return
 	}
 
-	// Regla simple: permitir borrar si no está publicado para votación
-	if v.IsPublicForVote {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "video is public for vote; cannot delete"})
+	// Check if video can be deleted based on status
+	if v.Status == domain.VideoPublished {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El video no puede ser eliminado (no está en estado \"uploaded\" o \"processed\" o ya está publicado)."})
 		return
 	}
 	// Borrar archivos si tienes Storage.Delete (opcional: delega a servicio)
@@ -186,3 +187,4 @@ func (h *VideoHandlers) Delete(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "El video ha sido eliminado exitosamente.", "video_id": id})
 }
+

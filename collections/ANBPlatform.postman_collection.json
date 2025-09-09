@@ -25,6 +25,20 @@
 						"type": "text/javascript",
 						"packages": {}
 					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Generate random email and set default password\r",
+							"const rand = Date.now() + Math.floor(Math.random()*1000);\r",
+							"const email = `user_${rand}@example.com`;\r",
+							"pm.environment.set(\"current_email\", email);\r",
+							"pm.environment.set(\"current_password\", \"StrongPass123\");\r"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
 				}
 			],
 			"request": {
@@ -32,7 +46,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"first_name\": \"John\",\r\n    \"last_name\": \"Doe\",\r\n    \"email\": \"john@example.com\",\r\n    \"password1\": \"StrongPass123\",\r\n    \"password2\": \"StrongPass123\",\r\n    \"city\": \"Bogotá\",\r\n    \"country\": \"Colombia\"\r\n}",
+					"raw": "{\r\n    \"first_name\": \"John\",\r\n    \"last_name\": \"Doe\",\r\n    \"email\": \"{{current_email}}\",\r\n    \"password1\": \"{{current_password}}\",\r\n    \"password2\": \"{{current_password}}\",\r\n    \"city\": \"Bogotá\",\r\n    \"country\": \"Colombia\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -75,52 +89,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"first_name\": \"John\",\r\n    \"last_name\": \"Doe\",\r\n    \"email\": \"john@example.com\",\r\n    \"password1\": \"StrongPass123\",\r\n    \"password2\": \"StrongPass123\",\r\n    \"city\": \"Bogotá\",\r\n    \"country\": \"Colombia\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/auth/signup",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"auth",
-						"signup"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Sign Up with Password Mismatch",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Code 400 for password mismatch\", function () {\r",
-							"    // Check status code\r",
-							"    pm.response.to.have.status(400);\r",
-							"\r",
-							"    const jsonData = pm.response.json();\r",
-							"    pm.expect(jsonData.error).to.eql(\"passwords do not match\");\r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"first_name\": \"John\",\r\n    \"last_name\": \"Doe\",\r\n    \"email\": \"john@example.com\",\r\n    \"password1\": \"StrongPass123\",\r\n    \"password2\": \"AnotherStrongPass123\",\r\n    \"city\": \"Bogotá\",\r\n    \"country\": \"Colombia\"\r\n}",
+					"raw": "{\r\n    \"first_name\": \"John\",\r\n    \"last_name\": \"Doe\",\r\n    \"email\": \"{{current_email}}\",\r\n    \"password1\": \"{{current_password}}\",\r\n    \"password2\": \"{{current_password}}\",\r\n    \"city\": \"Bogotá\",\r\n    \"country\": \"Colombia\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -167,7 +136,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"john@example.com\",\r\n    \"password\": \"StrongPass123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"{{current_email}}\",\r\n    \"password\": \"{{current_password}}\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -188,14 +157,20 @@
 			"response": []
 		},
 		{
-			"name": "Log In with Invalid Email",
+			"name": "Log In",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 401 Unauthorized\", function () {\r",
-							"    pm.response.to.have.status(401);\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Save access token\", function () {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.environment.set(\"access_token\", response.access_token);\r",
+							"    console.log(\"Access token saved!\");\r",
 							"});"
 						],
 						"type": "text/javascript",
@@ -208,48 +183,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"invalid@example.com\",\r\n    \"password\": \"StrongPass123\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/auth/login",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"auth",
-						"login"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Log In with Incorrect Password",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 401 Unauthorized\", function () {\r",
-							"    pm.response.to.have.status(401);\r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"john@example.com\",\r\n    \"password\": \"NotCorrectPassword123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"{{current_email}}\",\r\n    \"password\": \"{{current_password}}\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -334,7 +268,7 @@
 						{
 							"key": "video_file",
 							"type": "file",
-							"src": "postman-cloud:///1f08cfae-0372-4b70-8d87-84ef88818804"
+							"src": "backend/assets/example.mp4"
 						},
 						{
 							"key": "title",
@@ -352,6 +286,54 @@
 						"videos",
 						"upload"
 					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Health",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Health is OK\", function () {\r",
+							"  pm.response.to.have.status(200);\r",
+							"  pm.expect(pm.response.text()).to.eql(\"ok\");\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"]}},
+			"response": []
+		},
+		{
+			"name": "Get Public Videos (Paginated)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/public/videos?limit=5&offset=0",
+					"host": ["{{base_url}}"],
+					"path": ["public","videos"],
+					"query": [{"key":"limit","value":"5"},{"key":"offset","value":"0"}]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Rankings by City",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/public/rankings?city=Bogota&limit=10",
+					"host": ["{{base_url}}"],
+					"path": ["public","rankings"],
+					"query": [{"key":"city","value":"Bogota"},{"key":"limit","value":"10"}]
 				}
 			},
 			"response": []

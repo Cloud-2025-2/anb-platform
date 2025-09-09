@@ -81,6 +81,8 @@ definitions:
       processedURL:
         description: se llena cuando termina worker
         type: string
+      publishedAt:
+        type: string
       status:
         $ref: '#/definitions/domain.VideoStatus'
       title:
@@ -107,12 +109,14 @@ definitions:
     - uploaded
     - processing
     - processed
+    - published
     - failed
     type: string
     x-enum-varnames:
     - VideoUploaded
     - VideoProcessing
     - VideoProcessed
+    - VideoPublished
     - VideoFailed
   domain.Vote:
     properties:
@@ -187,7 +191,7 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
+        "204":
           description: User deleted successfully
           schema:
             additionalProperties:
@@ -585,7 +589,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Upload a video file for processing. Requires authentication.
+      description: Upload a video file for processing. Videos are automatically published for voting after processing is complete. Requires authentication.
       parameters:
       - description: Video file (MP4, max 100MB)
         in: formData

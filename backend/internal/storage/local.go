@@ -6,15 +6,21 @@ import (
 	"path/filepath"
 )
 
-type Local struct{ base string }
-
-func NewLocal(base string) *Local {
-	_ = os.MkdirAll(base, 0o755)
-	return &Local{base: base}
+type Storage interface {
+	Save(localTmpPath, destName string) (string, error)
 }
 
-func (l *Local) Save(tmpPath, destName string) (string, error) {
-	dst := filepath.Join(l.base, destName)
+type LocalStorage struct {
+	basePath string
+}
+
+func NewLocal(basePath string) Storage {
+	_ = os.MkdirAll(basePath, 0o755)
+	return &LocalStorage{basePath: basePath}
+}
+
+func (l *LocalStorage) Save(tmpPath, destName string) (string, error) {
+	dst := filepath.Join(l.basePath, destName)
 
 	srcF, err := os.Open(tmpPath)
 	if err != nil {

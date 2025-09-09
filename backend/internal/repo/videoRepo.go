@@ -84,7 +84,7 @@ func (r *videoRepo) ListPublic(limit, offset int) ([]domain.Video, error) {
 		offset = 0
 	}
 	var out []domain.Video
-	err := r.db.Where("is_public_for_vote = ?", true).
+	err := r.db.Where("status = ? AND is_public_for_vote = ?", "published", true).
 		Order("uploaded_at DESC").
 		Limit(limit).
 		Offset(offset).

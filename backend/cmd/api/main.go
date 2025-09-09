@@ -2,19 +2,22 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "github.com/Cloud-2025-2/anb-platform/docs"
 	"github.com/Cloud-2025-2/anb-platform/internal/auth"
+	"github.com/Cloud-2025-2/anb-platform/internal/cache"
 	"github.com/Cloud-2025-2/anb-platform/internal/config"
 	"github.com/Cloud-2025-2/anb-platform/internal/db"
 	"github.com/Cloud-2025-2/anb-platform/internal/domain"
 	"github.com/Cloud-2025-2/anb-platform/internal/httpapi"
+	"github.com/Cloud-2025-2/anb-platform/internal/kafka"
 	"github.com/Cloud-2025-2/anb-platform/internal/repo"
 	"github.com/Cloud-2025-2/anb-platform/internal/storage"
 	videosvc "github.com/Cloud-2025-2/anb-platform/internal/video"
@@ -60,17 +63,31 @@ func main() {
 
 	// services
 	authSvc := auth.NewService(usersRepo, cfg.JWTSecret, cfg.JWTExpireMinutes)
-	queueCli := asynq.NewClient(asynq.RedisClientOpt{
+
+	// Kafka producer for video processing
+	kafkaProducer, err := kafka.NewProducer(cfg.KafkaBrokers)
+	if err != nil {
+		log.Fatalf("Failed to create Kafka producer: %v", err)
+	}
+	defer kafkaProducer.Close()
+
+	// Redis client for caching
+	redisCli := redis.NewClient(&redis.Options{
 		Addr:     cfg.RedisAddr,
 		Password: cfg.RedisPassword,
+		DB:       0, // Use default DB for caching
 	})
+
+	// Initialize cache with 3-minute TTL (within the 1-5 minute range requested)
+	rankingsCache := cache.NewRankingsCache(redisCli, 3*time.Minute)
+
 	store := storage.NewLocal("./storage")
-	videoSvc := videosvc.NewService(videosRepo, store, queueCli)
+	videoSvc := videosvc.NewService(videosRepo, store, kafkaProducer)
 
 	// handlers
 	authH := httpapi.NewAuthHandlers(authSvc)
 	videoH := httpapi.NewVideoHandlers(usersRepo, videosRepo, videoSvc)
-	publicH := httpapi.NewPublicHandlers(videosRepo, votesRepo, usersRepo)
+	publicH := httpapi.NewPublicHandlers(videosRepo, votesRepo, usersRepo, rankingsCache)
 
 	// router
 	r := gin.Default()

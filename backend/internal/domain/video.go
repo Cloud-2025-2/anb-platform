@@ -13,6 +13,7 @@ const (
 	VideoUploaded   VideoStatus = "uploaded"
 	VideoProcessing VideoStatus = "processing"
 	VideoProcessed  VideoStatus = "processed"
+	VideoPublished  VideoStatus = "published"
 	VideoFailed     VideoStatus = "failed"
 )
 
@@ -26,6 +27,7 @@ type Video struct {
 	Status          VideoStatus `gorm:"type:text;index;not null;default:uploaded"`
 	UploadedAt      time.Time   `gorm:"autoCreateTime"`
 	ProcessedAt     *time.Time
+	PublishedAt     *time.Time
 	DurationOrigSec *int
 	DurationProcSec *int
 	WidthOrig       *int
