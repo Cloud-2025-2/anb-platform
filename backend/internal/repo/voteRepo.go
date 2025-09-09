@@ -1,6 +1,9 @@
 package repo
 
 import (
+	"errors"
+	"strings"
+	
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"github.com/Cloud-2025-2/anb-platform/internal/domain"
@@ -16,9 +19,20 @@ type voteRepo struct{ db *gorm.DB }
 
 func NewVoteRepo(db *gorm.DB) VoteRepository { return &voteRepo{db} }
 
+var ErrDuplicateVote = errors.New("user has already voted for this video")
+
 func (r *voteRepo) CastOnce(userID, videoID uuid.UUID) error {
 	v := domain.Vote{UserID: userID, VideoID: videoID}
-	return r.db.Create(&v).Error // UNIQUE(user_id,video_id) protege duplicados
+	err := r.db.Create(&v).Error
+	
+	// Check if error is due to unique constraint violation
+	if err != nil && (strings.Contains(err.Error(), "duplicate key") || 
+		strings.Contains(err.Error(), "UNIQUE constraint") || 
+		strings.Contains(err.Error(), "idx_user_video")) {
+		return ErrDuplicateVote
+	}
+	
+	return err
 }
 
 func (r *voteRepo) CountByVideo(videoID uuid.UUID) (int64, error) {

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -80,8 +81,11 @@ func (h *PublicHandlers) Vote(c *gin.Context) {
 	}
 
 	if err := h.votes.CastOnce(uid, vid); err != nil {
-		// si UNIQUE(user_id,video_id) falla, significa que ya votó
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Ya has votado por este video"})
+		if errors.Is(err, repo.ErrDuplicateVote) {
+			c.JSON(http.StatusConflict, gin.H{"error": "Ya has votado por este video"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno del servidor"})
 		return
 	}
 	

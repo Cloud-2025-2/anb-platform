@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b98265bf-02c2-4a24-b2a7-075175bba23c",
+		"_postman_id": "3f198f4a-e293-4642-a741-d3c4848bf717",
 		"name": "ANBPlatform",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "37575255"
@@ -157,53 +157,6 @@
 			"response": []
 		},
 		{
-			"name": "Log In",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {\r",
-							"    pm.response.to.have.status(200);\r",
-							"});\r",
-							"\r",
-							"pm.test(\"Save access token\", function () {\r",
-							"    const response = pm.response.json();\r",
-							"    pm.environment.set(\"access_token\", response.access_token);\r",
-							"    console.log(\"Access token saved!\");\r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"{{current_email}}\",\r\n    \"password\": \"{{current_password}}\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/auth/login",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"auth",
-						"login"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "Upload Video",
 			"event": [
 				{
@@ -267,8 +220,106 @@
 					"formdata": [
 						{
 							"key": "video_file",
+							"description": ".mp4 file with a max file size of 100mb",
 							"type": "file",
-							"src": "backend/assets/example.mp4"
+							"src": "/D:/Uni/Cloud/anb-platform/backend/assets/example.mp4"
+						},
+						{
+							"key": "title",
+							"value": "example",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{base_url}}/videos/upload",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"videos",
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload Video Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Video uploaded successfully\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    \r",
+							"    // Verificar que existe el message de éxito\r",
+							"    pm.expect(jsonData).to.have.property('message');\r",
+							"    pm.expect(jsonData.message).to.eql(\"Video subido correctamente. Procesamiento en curso.\");\r",
+							"});\r",
+							"\r",
+							"// Test para verificar y guardar el task_id\r",
+							"pm.test(\"Task ID received and saved\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    \r",
+							"    // Verificar que existe el task_id\r",
+							"    pm.expect(jsonData).to.have.property('task_id');\r",
+							"    pm.expect(jsonData.task_id).to.be.a('string');\r",
+							"    \r",
+							"    // Guardar el task_id en el ambiente\r",
+							"    pm.environment.set(\"task_id2\", jsonData.task_id);\r",
+							"    \r",
+							"    console.log(\"Task ID saved successfully:\", jsonData.task_id);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Video ID received and saved\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    \r",
+							"    // Verificar que existe el task_id\r",
+							"    pm.expect(jsonData).to.have.property('video_id');\r",
+							"    pm.expect(jsonData.task_id).to.be.a('string');\r",
+							"    \r",
+							"    // Guardar el task_id en el ambiente\r",
+							"    pm.environment.set(\"video_id2\", jsonData.video_id);\r",
+							"    \r",
+							"    console.log(\"Video ID saved successfully:\", jsonData.video_id);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "video_file",
+							"type": "file",
+							"src": "/D:/Uni/Cloud/anb-platform/backend/assets/ejemplo2.mp4"
 						},
 						{
 							"key": "title",
@@ -307,33 +358,59 @@
 					}
 				}
 			],
-			"request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"]}},
-			"response": []
-		},
-		{
-			"name": "Get Public Videos (Paginated)",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/public/videos?limit=5&offset=0",
-					"host": ["{{base_url}}"],
-					"path": ["public","videos"],
-					"query": [{"key":"limit","value":"5"},{"key":"offset","value":"0"}]
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
 				}
 			},
 			"response": []
 		},
 		{
 			"name": "Rankings by City",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response code is 200\", function () {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
 					"raw": "{{base_url}}/public/rankings?city=Bogota&limit=10",
-					"host": ["{{base_url}}"],
-					"path": ["public","rankings"],
-					"query": [{"key":"city","value":"Bogota"},{"key":"limit","value":"10"}]
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"public",
+						"rankings"
+					],
+					"query": [
+						{
+							"key": "city",
+							"value": "Bogota"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						}
+					]
 				}
 			},
 			"response": []
@@ -589,8 +666,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 400\", function () {\r",
-							"    pm.response.to.have.status(400);\r",
+							"pm.test(\"Status code is 409\", function () {\r",
+							"    pm.response.to.have.status(409);\r",
 							"});"
 						],
 						"type": "text/javascript",
@@ -725,176 +802,6 @@
 					"path": [
 						"videos",
 						"{{video_id}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Delete Video By ID",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {\r",
-							"    pm.response.to.have.status(200);\r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/videos/{{video_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"videos",
-						"{{video_id}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Delete Video By Nonexistent ID",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 404\", function () {\r",
-							"    pm.response.to.have.status(404);\r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/videos/{{video_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"videos",
-						"{{video_id}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Video By Nonexistent ID",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 404\", function () {\r",
-							"    pm.response.to.have.status(404);\r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/videos/{{video_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"videos",
-						"{{video_id}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Vote for Nonexistent Video",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 404\", function () {\r",
-							"    pm.response.to.have.status(404);\r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/public/videos/{{video_id}}/vote",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"public",
-						"videos",
-						"{{video_id}}",
-						"vote"
 					]
 				}
 			},
