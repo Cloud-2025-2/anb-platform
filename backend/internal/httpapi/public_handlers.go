@@ -62,7 +62,18 @@ func (h *PublicHandlers) Vote(c *gin.Context) {
 	if err != nil { c.Status(http.StatusUnauthorized); return }
 
 	vid, err := uuid.Parse(c.Param("id"))
-	if err != nil { c.Status(http.StatusNotFound); return }
+	if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"}); return }
+
+	// Check if video exists and is public for voting
+	video, err := h.videos.FindByID(vid)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		return
+	}
+	if !video.IsPublicForVote {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video not available for voting"})
+		return
+	}
 
 	if err := h.votes.CastOnce(uid, vid); err != nil {
 		// si UNIQUE(user_id,video_id) falla, significa que ya votó

@@ -81,7 +81,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 // @Tags Authentication
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]string "User deleted successfully"
+// @Success 204 {object} map[string]string "User deleted successfully"
 // @Failure 401 {object} map[string]string "Unauthorized - invalid or missing token"
 // @Failure 404 {object} map[string]string "User not found"
 // @Failure 500 {object} map[string]string "Internal server error"

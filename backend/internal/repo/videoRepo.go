@@ -53,10 +53,27 @@ func (r *videoRepo) Update(v *domain.Video) error {
 }
 
 func (r *videoRepo) DeleteByIDForUser(id, userID uuid.UUID) error {
-	// Hard delete del registro que pertenece al usuario.
-	// Las FK con ON DELETE CASCADE se encargan de votos/tareas si las definiste así.
-	return r.db.Where("id = ? AND user_id = ?", id, userID).
-		Delete(&domain.Video{}).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// First verify the video exists and belongs to the user
+		var video domain.Video
+		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&video).Error; err != nil {
+			return err // This will return gorm.ErrRecordNotFound if not found
+		}
+		
+		// Delete all votes for this video first (cascade prevention)
+		if err := tx.Where("video_id = ?", id).Delete(&domain.Vote{}).Error; err != nil {
+			return err
+		}
+		
+		// Note: Tasks are handled by the async processing system separately
+		
+		// Finally delete the video
+		if err := tx.Delete(&video).Error; err != nil {
+			return err
+		}
+		
+		return nil
+	})
 }
 
 func (r *videoRepo) ListPublic(limit, offset int) ([]domain.Video, error) {

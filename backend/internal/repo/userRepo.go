@@ -32,5 +32,37 @@ func (r *userRepo) FindByID(id uuid.UUID) (*domain.User, error) {
 }
 
 func (r *userRepo) DeleteByID(id uuid.UUID) error {
-	return r.db.Delete(&domain.User{}, "id = ?", id).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// First verify user exists
+		var user domain.User
+		if err := tx.Where("id = ?", id).First(&user).Error; err != nil {
+			return err
+		}
+		
+		// Get all user's videos to delete votes on them
+		var userVideos []domain.Video
+		if err := tx.Where("user_id = ?", id).Find(&userVideos).Error; err != nil {
+			return err
+		}
+		
+		// Delete all votes by this user
+		if err := tx.Where("user_id = ?", id).Delete(&domain.Vote{}).Error; err != nil {
+			return err
+		}
+		
+		// Delete all votes on user's videos
+		for _, video := range userVideos {
+			if err := tx.Where("video_id = ?", video.ID).Delete(&domain.Vote{}).Error; err != nil {
+				return err
+			}
+		}
+		
+		// Delete user's videos
+		if err := tx.Where("user_id = ?", id).Delete(&domain.Video{}).Error; err != nil {
+			return err
+		}
+		
+		// Finally delete the user
+		return tx.Delete(&user).Error
+	})
 }
