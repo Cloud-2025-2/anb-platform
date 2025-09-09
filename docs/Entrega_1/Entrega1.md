@@ -84,3 +84,18 @@ http://localhost:8000/api/health
 ```
 http://localhost:8000/swagger/index.html
 ```
+
+### API Tests with Postman
+
+```
+npm install
+npm run test
+```
+
+To generate an *.html* test report:
+
+```
+npm run test:report
+```
+
+Note: `Vote for Video` test takes around 20 seconds to run while newman waits for the video to be processed and made public.

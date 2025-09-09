@@ -222,11 +222,11 @@
 							"key": "video_file",
 							"description": ".mp4 file with a max file size of 100mb",
 							"type": "file",
-							"src": "/D:/Uni/Cloud/anb-platform/backend/assets/example.mp4"
+							"src": "./backend/assets/example.mp4"
 						},
 						{
 							"key": "title",
-							"value": "example",
+							"value": "example1",
 							"type": "text"
 						}
 					]
@@ -319,11 +319,11 @@
 						{
 							"key": "video_file",
 							"type": "file",
-							"src": "/D:/Uni/Cloud/anb-platform/backend/assets/ejemplo2.mp4"
+							"src": "./backend/assets/example2.mp4"
 						},
 						{
 							"key": "title",
-							"value": "example",
+							"value": "example2",
 							"type": "text"
 						}
 					]
@@ -625,6 +625,16 @@
 							"pm.test(\"Status code is 200\", function () {\r",
 							"    pm.response.to.have.status(200);\r",
 							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"setTimeout(() => {console.log('Waiting 20 seconds for video processing...');}, 20000);\r"
 						],
 						"type": "text/javascript",
 						"packages": {}

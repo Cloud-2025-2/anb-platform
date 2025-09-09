@@ -1,0 +1,11 @@
+[
+    {
+      "video_file1": "./backend/assets/example.mp4",
+      "video_title1": "example"
+    },
+    {
+        "video_file2": "./backend/assets/example2.mp4",
+        "video_title2": "example2"
+    }
+
+]

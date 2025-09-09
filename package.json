@@ -1,0 +1,13 @@
+{
+  "name": "anb-platform-api-tests",
+  "version": "1.0.0",
+  "description": "ANB Platform API test suite",
+  "scripts": {
+    "test": "newman run ./collections/ANBPlatform.postman_collection.json -e ./collections/ANBEnvironment.postman_environment.json --working-dir ./",
+    "test:report": "newman run ./collections/ANBPlatform.postman_collection.json -e ./collections/ANBEnvironment.postman_environment.json --working-dir ./ --reporters cli,htmlextra --reporter-htmlextra-export ./test-report.html"
+  },
+  "devDependencies": {
+    "newman": "^6.0.0",
+    "newman-reporter-htmlextra": "^1.22.11"
+  }
+}

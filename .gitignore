@@ -1,1 +1,3 @@
 */storage/*.mp4
+node_modules
+*.vscode
