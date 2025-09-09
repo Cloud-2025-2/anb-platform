@@ -1,57 +1,56 @@
-// src/pages/Upload.tsx
 import { useState } from "react";
 import api from "../lib/api";
-import type { AxiosError } from "axios";
 
-type UploadResp = { message?: string };
+const MAX_MB = 100;
 
-function Upload() {
+export default function Upload() {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const onPick = (f: File | null) => {
+    if (!f) return setFile(null);
+    if (f.type !== "video/mp4") return setMsg("Solo se permite MP4");
+    if (f.size > MAX_MB * 1024 * 1024) return setMsg("Máximo 100 MB");
+    setMsg(null); setFile(f);
+  };
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!file) {
-      setMsg("Selecciona un MP4");
-      return;
-    }
+    e.preventDefault(); if (!file) return setMsg("Selecciona un MP4");
     const fd = new FormData();
     fd.append("title", title);
     fd.append("video_file", file);
-
     try {
-      const { data } = await api.post<UploadResp>("/videos/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
+      setLoading(true);
+      const { data } = await api.post<{message?:string}>("/videos/upload", fd, {
+        headers:{ "Content-Type":"multipart/form-data" }
       });
       setMsg(data?.message ?? "Subido. Procesamiento en curso.");
-      setTitle("");
-      setFile(null);
-    } catch (err: unknown) {
-      const ax = err as AxiosError<{ message?: string }>;
-      setMsg(ax.response?.data?.message ?? "Error al subir");
-    }
+      setTitle(""); setFile(null);
+    } catch { setMsg("Error al subir"); }
+    finally { setLoading(false); }
   };
 
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: 8 }}>
-      <h2>Subir video</h2>
-      <input
-        placeholder="Título"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        required
-      />
-      <input
-        type="file"
-        accept="video/mp4"
-        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        required
-      />
-      <button>Subir</button>
-      {msg && <small>{msg}</small>}
-    </form>
+    <div className="card" style={{padding:24}}>
+      <h1>Upload new video</h1>
+      <form onSubmit={submit} className="form" style={{maxWidth:520}}>
+        <div className="field">
+          <label>Title</label>
+          <input className="input" value={title}
+            onChange={e=>setTitle(e.target.value)} required />
+        </div>
+        <div className="field">
+          <label>MP4 file (≤ 100 MB)</label>
+          <input type="file" className="input" accept="video/mp4"
+            onChange={e=>onPick(e.target.files?.[0] ?? null)} required />
+        </div>
+        <button className="btn btn-primary" disabled={loading}>
+          {loading ? "Uploading..." : "Upload"}
+        </button>
+        {msg && <div className="helper" style={{marginTop:6}}>{msg}</div>}
+      </form>
+    </div>
   );
 }
-
-export default Upload;

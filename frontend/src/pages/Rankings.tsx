@@ -1,54 +1,68 @@
 import { useEffect, useState } from "react";
-import type { AxiosError } from "axios";
 import api from "../lib/api";
 
-type RankRow = {
-  position?: number;     // si el backend ya lo manda
-  username?: string;     // o nombre del usuario
-  city?: string;
-  votes: number;
-};
+type Row = { position?: number; username?: string; city?: string; votes: number };
+type RankResp = Row[] | { data: Row[]; total_pages?: number };
 
-function Rankings() {
-  const [rows, setRows] = useState<RankRow[]>([]);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function Rankings() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [city, setCity] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  async function load() {
-    setLoading(true);
-    setErr(null);
-    try {
-      const { data } = await api.get<RankRow[]>("/public/rankings");
-      setRows(Array.isArray(data) ? data : []);
-    } catch (e: unknown) {
-      const ax = e as AxiosError<{ message?: string }>;
-      setErr(ax.response?.data?.message ?? "No se pudo cargar el ranking");
-    } finally {
-      setLoading(false);
+  const load = async () => {
+    const { data } = await api.get<RankResp>("/public/rankings", {
+      params: { city: city || undefined, page, limit: 10 }
+    });
+
+    if (Array.isArray(data)) {
+      setRows(data);
+      setTotalPages(1);
+    } else {
+      setRows(data.data ?? []);
+      setTotalPages(data.total_pages ?? 1);
     }
-  }
+  };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [city, page]);
+
+  useEffect(() => { load(); }, [city, page]);
 
   return (
     <div>
-      <h2>Ranking</h2>
-      {loading && <small>Cargando…</small>}
-      {err && <small>{err}</small>}
-      {!loading && !err && (
-        <ol>
+      <h1>Leaderboard</h1>
+
+      <div style={{display:"flex", gap:12, marginBottom:10}}>
+        <select className="select" value={city} onChange={e=>{setPage(1); setCity(e.target.value);}}>
+          <option value="">All cities</option>
+          {/* si quieres una lista dinámica de ciudades, podrías cargarla de /public/rankings?cities=1 */}
+          <option>Bogotá</option><option>Medellín</option><option>Cali</option>
+        </select>
+      </div>
+
+      <table className="table">
+        <thead>
+          <tr><th style={{width:80}}>Rank</th><th>User</th><th style={{width:160}}>Votes</th></tr>
+        </thead>
+        <tbody>
           {rows.map((r, i) => (
-            <li key={i}>
-              #{r.position ?? i + 1}{" "}
-              {r.username ?? "Usuario"}{r.city ? ` (${r.city})` : ""} — {r.votes} votos
-            </li>
+            <tr key={i}>
+              <td>#{r.position ?? (i + 1 + (page-1)*10)}</td>
+              <td>{r.username ?? "Usuario"}{r.city ? ` (${r.city})` : ""}</td>
+              <td>{r.votes}</td>
+            </tr>
           ))}
-          {rows.length === 0 && <li>Sin datos aún.</li>}
-        </ol>
-      )}
-      <button onClick={load} style={{ marginTop: 8 }}>Actualizar</button>
+          {rows.length===0 && (
+            <tr><td colSpan={3} className="helper" style={{padding:20}}>Sin resultados.</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      <div className="pager">
+        <button className="btn" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1}>‹</button>
+        <span className="helper">Page {page} / {totalPages}</span>
+        <button className="btn" onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages}>›</button>
+      </div>
     </div>
   );
 }
-
-export default Rankings;

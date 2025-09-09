@@ -18,8 +18,6 @@ export const router = createBrowserRouter([
       { path: "rankings", element: <Rankings /> },
       { path: "login", element: <Login /> },
       { path: "signup", element: <Signup /> },
-
-      // rutas protegidas
       { path: "upload", element: <PrivateRoute element={<Upload />} /> },
       { path: "my-videos", element: <PrivateRoute element={<MyVideos />} /> },
       { path: "videos/:id", element: <PrivateRoute element={<VideoDetail />} /> },
