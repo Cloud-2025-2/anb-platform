@@ -158,7 +158,6 @@ A video goes through several states from upload to being publicly available for 
 4. **Store**: Processed video saved to storage
 5. **Update**: Database updated with processed video info
 
-{{ ... }}
 ### Processing Steps
 
 The video processing pipeline is a sequence of automated steps executed by our workers after a video is uploaded. Each step is designed to standardize the content for the platform.
@@ -197,9 +196,6 @@ The video processing pipeline is a sequence of automated steps executed by our w
 
 - JWT authentication for protected endpoints (expiry time of 1 hour)
 - Input validation on all API endpoints
-- File type validation for uploads
-
-{{ ... }}
 - File type validation for uploads
 
 ## Caching Strategy
