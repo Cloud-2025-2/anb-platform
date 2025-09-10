@@ -70,8 +70,8 @@
 
 ### Accessing the Application
 
-- **Frontend**: TODO
-- **Check API Health**: http://localhost:8080/health
+- **Frontend**: [TODO](http://localhost:3000/)
+- **Check API Health**: http://localhost:8000/health
 
 ### Stopping Services
 
