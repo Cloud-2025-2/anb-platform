@@ -113,6 +113,10 @@ http://localhost:8000/api/health
 http://localhost:8000/swagger/index.html
 ```
 
+### Postman Documentation
+
+Access the public documentation via this [link](https://documenter.getpostman.com/view/37575255/2sB3HnMLYF)
+
 ### API Tests with Postman
 
 ```
