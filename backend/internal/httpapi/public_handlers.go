@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"github.com/Cloud-2025-2/anb-platform/internal/cache"
 	"github.com/Cloud-2025-2/anb-platform/internal/domain"
@@ -41,7 +42,7 @@ func (h *PublicHandlers) ListVideos(c *gin.Context) {
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	list, err := h.videos.ListPublic(limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving public videos"})
 		return
 	}
 	c.JSON(http.StatusOK, list)
@@ -64,15 +65,25 @@ func (h *PublicHandlers) ListVideos(c *gin.Context) {
 // @Router /public/videos/{id}/vote [post]
 func (h *PublicHandlers) Vote(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
-	if err != nil { c.Status(http.StatusUnauthorized); return }
+	if err != nil { 
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user token"})
+		return 
+	}
 
 	vid, err := uuid.Parse(c.Param("id"))
-	if err != nil { c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"}); return }
+	if err != nil { 
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		return 
+	}
 
 	// Check if video exists and is public for voting
 	video, err := h.videos.FindByID(vid)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving video"})
+		}
 		return
 	}
 	if !video.IsPublicForVote || video.Status != domain.VideoPublished {
@@ -82,10 +93,10 @@ func (h *PublicHandlers) Vote(c *gin.Context) {
 
 	if err := h.votes.CastOnce(uid, vid); err != nil {
 		if errors.Is(err, repo.ErrDuplicateVote) {
-			c.JSON(http.StatusConflict, gin.H{"error": "Ya has votado por este video"})
+			c.JSON(http.StatusConflict, gin.H{"error": "Already voted for this video"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno del servidor"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	
@@ -93,7 +104,7 @@ func (h *PublicHandlers) Vote(c *gin.Context) {
 	ctx := context.Background()
 	_ = h.cache.InvalidateAll(ctx) // Ignore errors to avoid blocking the response
 	
-	c.JSON(http.StatusOK, gin.H{"message": "Voto registrado exitosamente."})
+	c.JSON(http.StatusOK, gin.H{"message": "Vote registered successfully"})
 }
 
 // Rankings godoc
@@ -122,7 +133,7 @@ func (h *PublicHandlers) Rankings(c *gin.Context) {
 	// Cache miss - get from database
 	rows, err := h.votes.TopByCity(limit, city)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving rankings"})
 		return
 	}
 	

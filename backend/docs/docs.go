@@ -58,15 +58,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -128,24 +119,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "404": {
-                        "description": "Not found - user does not exist",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "Too many requests - rate limit exceeded",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -193,16 +166,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad request - validation error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict - email already exists",
+                        "description": "Bad request - validation error or email already exists",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -233,7 +197,7 @@ const docTemplate = `{
         },
         "/public/rankings": {
             "get": {
-                "description": "Get current player rankings based on votes. Can be filtered by city.",
+                "description": "Get current player rankings based on votes. Can be filtered by city. Results are cached for improved performance.",
                 "produces": [
                     "application/json"
                 ],
@@ -558,7 +522,7 @@ const docTemplate = `{
                         }
                     },
                     "413": {
-                        "description": "Payload too large - file exceeds 100MB",
+                        "description": "Request entity too large - file exceeds 100MB",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -716,86 +680,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Video not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/videos/{id}/publish": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Change video status from \"processed\" to \"published\", making it visible in public videos for voting",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Videos"
-                ],
-                "summary": "Publish a video for voting",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Video ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Video published successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - video cannot be published (not in processed state or already published)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - invalid or missing token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - video does not belong to user",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

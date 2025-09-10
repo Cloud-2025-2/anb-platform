@@ -1,12 +1,14 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"github.com/Cloud-2025-2/anb-platform/internal/domain"
 	"github.com/Cloud-2025-2/anb-platform/internal/repo"
@@ -36,7 +38,7 @@ func NewVideoHandlers(users repo.UserRepository, videos repo.VideoRepository, sv
 // @Failure 400 {object} map[string]string "Bad request - file validation error"
 // @Failure 401 {object} map[string]string "Unauthorized - invalid or missing token"
 // @Failure 403 {object} map[string]string "Forbidden - user not allowed to upload"
-// @Failure 413 {object} map[string]string "Payload too large - file exceeds 100MB"
+// @Failure 413 {object} map[string]string "Request entity too large - file exceeds 100MB"
 // @Failure 415 {object} map[string]string "Unsupported media type - invalid file format"
 // @Failure 422 {object} map[string]string "Unprocessable entity - missing required fields"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -44,12 +46,12 @@ func NewVideoHandlers(users repo.UserRepository, videos repo.VideoRepository, sv
 func (h *VideoHandlers) Upload(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user token"})
 		return
 	}
 	u, err := h.users.FindByID(uid)
 	if err != nil {
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 
@@ -60,24 +62,24 @@ func (h *VideoHandlers) Upload(c *gin.Context) {
 		return
 	}
 	if file.Size > 100*1024*1024 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "max 100MB"})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "File exceeds maximum size of 100MB"})
 		return
 	}
 
 	tmp := filepath.Join(os.TempDir(), "anb_"+uuid.NewString()+filepath.Ext(file.Filename))
 	if err := c.SaveUploadedFile(file, tmp); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error saving file"})
 		return
 	}
 	defer os.Remove(tmp)
 
 	taskID, videoID, err := h.svc.UploadAndEnqueue(*u, tmp, title)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing video"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
-		"message":  "Video subido correctamente. Procesamiento en curso.",
+		"message":  "Video uploaded successfully. Processing in progress.",
 		"task_id":  taskID,
 		"video_id": videoID,
 	})
@@ -97,12 +99,12 @@ func (h *VideoHandlers) Upload(c *gin.Context) {
 func (h *VideoHandlers) MyVideos(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user token"})
 		return
 	}
 	list, err := h.videos.FindByUser(uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving videos"})
 		return
 	}
 	c.JSON(http.StatusOK, list)
@@ -125,17 +127,21 @@ func (h *VideoHandlers) MyVideos(c *gin.Context) {
 func (h *VideoHandlers) Detail(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user token"})
 		return
 	}
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.Status(http.StatusNotFound)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
 		return
 	}
 	v, err := h.videos.FindByIDForUser(id, uid)
 	if err != nil {
-		c.Status(http.StatusNotFound)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving video"})
+		}
 		return
 	}
 	c.JSON(http.StatusOK, v)
@@ -157,24 +163,28 @@ func (h *VideoHandlers) Detail(c *gin.Context) {
 func (h *VideoHandlers) Delete(c *gin.Context) {
 	uid, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user token"})
 		return
 	}
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.Status(http.StatusNotFound)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
 		return
 	}
 
 	v, err := h.videos.FindByIDForUser(id, uid)
 	if err != nil {
-		c.Status(http.StatusNotFound)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving video"})
+		}
 		return
 	}
 
 	// Check if video can be deleted based on status
 	if v.Status == domain.VideoPublished {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "El video no puede ser eliminado (no está en estado \"uploaded\" o \"processed\" o ya está publicado)."})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video cannot be deleted - already published"})
 		return
 	}
 	// Borrar archivos si tienes Storage.Delete (opcional: delega a servicio)
@@ -182,9 +192,13 @@ func (h *VideoHandlers) Delete(c *gin.Context) {
 
 	// Usa Save/SoftDelete según tu repo; aquí reuse Update→Status, o implementa Delete en repo.
 	if err := h.videos.DeleteByIDForUser(id, uid); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting video"})
+		}
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "El video ha sido eliminado exitosamente.", "video_id": id})
+	c.JSON(http.StatusOK, gin.H{"message": "Video deleted successfully", "video_id": id})
 }
 
