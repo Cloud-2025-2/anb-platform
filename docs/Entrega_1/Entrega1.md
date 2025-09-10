@@ -63,15 +63,12 @@
    docker-compose logs -f
    
    # View specific service logs
-   docker-compose logs -f api
-   docker-compose logs -f db
-   docker-compose logs -f frontend
+   docker-compose logs -f <service_name>
    ```
 
 ### Accessing the Application
 
 - **Frontend**: http://localhost:3000/
-- **Check API Health**: http://localhost:8000/health
 
 ### Stopping Services
 
