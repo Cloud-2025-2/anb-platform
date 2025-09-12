@@ -26,7 +26,7 @@ export default function VideoDetail() {
   try {
     await api.delete(`/videos/${id}`);
     nav("/my-videos");
-  } catch (err: unknown) { // ⬅️ sin any
+  } catch (err: unknown) { 
     const ax = err as AxiosError<{ message?: string }>;
     setMsg(ax.response?.data?.message ?? "No se pudo eliminar");
   }
@@ -44,8 +44,6 @@ export default function VideoDetail() {
           <div className="thumb" style={{width:"100%", height:320}} />
         )}
         <div style={{display:"flex", gap:10, marginTop:12, flexWrap:"wrap"}}>
-          {d.OriginalURL && <a className="btn" href={d.OriginalURL} target="_blank">Original</a>}
-          {d.ProcessedURL && <a className="btn" href={d.ProcessedURL} target="_blank">Download</a>}
           <span className={`badge ${d.Status}`}>{d.Status}</span>
           {/* Borra solo si no está publicado para votación (si no tienes el flag, deja visible y el backend valida) */}
           {!d.is_public && <button className="btn btn-danger" onClick={remove}>Eliminar</button>}

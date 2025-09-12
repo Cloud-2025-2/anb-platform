@@ -28,7 +28,6 @@ export default function MyVideos() {
               <span className={`badge ${v.Status}`}>{v.Status}</span>
               <div style={{display:"flex", gap:8}}>
                 <Link to={`/videos/${v.ID}`} className="btn">Details</Link>
-                {v.ProcessedURL && <a className="btn" href={v.ProcessedURL} target="_blank">Download</a>}
               </div>
             </div>
           </div>
