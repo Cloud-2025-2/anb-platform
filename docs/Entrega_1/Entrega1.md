@@ -230,6 +230,155 @@ To ensure high performance and reduce the load on the database, a caching strate
     3.  **Cache Hit**: If the data is found in the cache, it is returned directly to the user.
     4.  **Cache Miss**: If the data is not in the cache, the system queries the PostgreSQL database, stores the result in Redis with the defined TTL, and then returns the data to the user.
 
+# Modelo de Datos — ERD Detallado
+
+> Dominio: Plataforma para autenticación de usuarios, carga de videos, procesamiento asíncrono y votación.
+
+
+## Convenciones
+- **PK** = Clave primaria  
+- **FK** = Clave foránea  
+- **Tipos**: `uuid`, `text`, `int`, `smallint`, `boolean`, `timestamptz`  
+- **Estados (enums representados como text + CHECK)**:
+  - `videos.status ∈ {UPLOADED, PROCESSING, READY, FAILED}`
+  - `tasks.status ∈ {PENDING, RUNNING, DONE, FAILED, RETRY}`
+  - `votes.value ∈ {1, -1}`
+
+
+
+## 1. Entidad `users`
+
+**Propósito:** almacenar a los usuarios de la plataforma.
+
+**Atributos:**
+- `id: uuid` — **PK**
+- `name: text` — no nulo
+- `email: text` — no nulo, único
+- `password_hash: text` — no nulo
+- `role: text` — enum: `user | admin`
+- `created_at: timestamptz` — no nulo
+- `updated_at: timestamptz` — no nulo
+
+**Restricciones y reglas:**
+- `UNIQUE(email)`
+- El campo `role` determina permisos
+
+**Relaciones:**
+- (1) `users` —— (N) `videos`
+- (1) `users` —— (N) `votes`
+- (1) `users` —— (N) `tokens` *(opcional)*
+
+
+
+## 2. Entidad `videos`
+
+**Propósito:** representar el contenido subido.
+
+**Atributos:**
+- `id: uuid` — **PK**
+- `user_id: uuid` — **FK → users.id**
+- `title: text` — no nulo
+- `description: text` — opcional
+- `storage_path: text` — no nulo (ruta en FS o S3)
+- `mime_type: text` — no nulo, ej. `video/mp4`
+- `size_bytes: int` — no nulo, positivo
+- `status: text` — `UPLOADED|PROCESSING|READY|FAILED`
+- `ready_at: timestamptz` — opcional
+- `created_at: timestamptz` — no nulo
+- `updated_at: timestamptz` — no nulo
+
+**Restricciones y reglas:**
+- `FK user_id` con `ON DELETE CASCADE` o `RESTRICT`
+- Flujo de estados: `UPLOADED → PROCESSING → READY` o `FAILED`
+
+**Relaciones:**
+- (1) `videos` —— (N) `votes`
+- (1) `videos` —— (N) `tasks`
+- (N) `videos` —— (N) `tags` *(opcional, vía video_tags)*
+
+
+
+## 3. Entidad `votes`
+
+**Propósito:** registrar likes/dislikes.
+
+**Atributos:**
+- `id: uuid` — **PK**
+- `user_id: uuid` — **FK → users.id**
+- `video_id: uuid` — **FK → videos.id**
+- `value: smallint` — `1` o `-1`
+- `created_at: timestamptz` — no nulo
+
+**Restricciones y reglas:**
+- `UNIQUE(user_id, video_id)` — un voto por usuario por video
+- `ON DELETE CASCADE` en ambas FKs
+
+**Relaciones:**
+- (1) `users` —— (N) `votes`
+- (1) `videos` —— (N) `votes`
+
+
+
+## 4. Entidad `tasks`
+
+**Propósito:** gestionar tareas asíncronas sobre los videos.
+
+**Atributos:**
+- `id: uuid` — **PK**
+- `video_id: uuid` — **FK → videos.id**
+- `type: text` — ej. `transcode`, `thumbnail`
+- `status: text` — `PENDING|RUNNING|DONE|FAILED|RETRY`
+- `attempts: int` — default 0
+- `error_msg: text` — opcional
+- `enqueued_at: timestamptz` — no nulo
+- `started_at: timestamptz` — opcional
+- `finished_at: timestamptz` — opcional
+
+**Restricciones y reglas:**
+- Flujo esperado: `PENDING → RUNNING → DONE` o `FAILED/RETRY`
+- `ON DELETE CASCADE` en `video_id`
+
+**Relaciones:**
+- (1) `videos` —— (N) `tasks`
+
+
+
+## 5. Entidad `tokens` *(opcional)*
+
+**Propósito:** almacenar refresh tokens.
+
+**Atributos:**
+- `id: uuid` — **PK**
+- `user_id: uuid` — **FK → users.id**
+- `token_type: text` — ej. `refresh`
+- `token_hash: text` — **único**
+- `expires_at: timestamptz` — no nulo
+- `revoked: boolean` — default `false`
+- `created_at: timestamptz` — no nulo
+
+
+
+## 6. Entidad `tags` y `video_tags` *(opcional)*
+
+**Propósito:** etiquetas asociadas a videos.
+
+**tags**
+- `id: uuid` — **PK**
+- `name: text` — único
+
+**video_tags**
+- `video_id: uuid` — **FK → videos.id**
+- `tag_id: uuid` — **FK → tags.id**
+- **PK compuesta** `(video_id, tag_id)`
+
+## Reglas de negocio clave
+
+1. **Un voto por usuario por video** → `UNIQUE(user_id, video_id)`.  
+2. **Estados de video**: `UPLOADED → PROCESSING → READY` (o `FAILED`).  
+3. **Estados de tarea**: `PENDING → RUNNING → DONE` (o `FAILED/RETRY`).  
+4. **Permisos**: solo el `owner` o un `admin` pueden eliminar un video.  
+5. **Integridad de archivo**: validar `size_bytes > 0`, `mime_type` permitido.  
+
 
 # SonarQube
 https://sonarcloud.io/project/overview?id=Cloud-2025-2_anb-platform
