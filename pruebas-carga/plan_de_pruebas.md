@@ -175,7 +175,7 @@ export default function () {
 
 
 
-### ´upload_and_poll.js´
+### `upload_and_poll.js`
 
 ```js
 import http from 'k6/http';
@@ -199,6 +199,7 @@ const PASS = __ENV.USER_PASS || 'secret';
 const FILE = __ENV.FILE_PATH || '/data/video_50mb.mp4';
 
 export default function () {
+  // login
   const login = http.post(
     `${BASE}/api/auth/login`,
     JSON.stringify({ email: USER, password: PASS }),
@@ -207,6 +208,7 @@ export default function () {
   check(login, { 'login 200': (r) => r.status === 200 });
   const token = login.json('token');
 
+  // upload multipart
   const form = {
     video_file: http.file(open(FILE, 'b'), 'video_50mb.mp4', 'video/mp4'),
     title: `k6-upload-${__VU}-${Date.now()}`,
@@ -216,6 +218,7 @@ export default function () {
   });
   check(up, { 'upload 201/200': (r) => r.status === 201 || r.status === 200 });
 
+  // polling del estado hasta READY (máx 30 intentos)
   for (let i = 0; i < 30; i++) {
     const my = http.get(`${BASE}/api/videos/my`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -223,8 +226,10 @@ export default function () {
     if (my.status === 200 && JSON.stringify(my.body).includes('READY')) break;
     sleep(2);
   }
-}´´´
+}
 
+
+---
 
 ## 13. Ejecución
 
