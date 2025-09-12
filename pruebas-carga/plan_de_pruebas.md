@@ -79,7 +79,8 @@
 
 ## 8. Topología (Mermaid)
 
-```mermaid
+```
+mermaid
 flowchart LR
   subgraph Client[Generador de carga (k6)]
   end
