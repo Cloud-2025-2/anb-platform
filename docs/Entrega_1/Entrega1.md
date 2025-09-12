@@ -67,8 +67,21 @@
    ```
 
 ### Accessing the Application
-
 - **Frontend**: http://localhost:3000/
+
+1. **Install depedencies**
+   ```bash
+   cd /Users/hernandosanchez/Desktop/anb-platform/frontend
+   npm install
+   ```
+   
+2. **Run the frontend**
+   ```bash
+   npm run dev -- --port 5174 
+   ```
+3. **Open the application**
+
+   copy and paste the link on the browser. 
 
 ### Stopping Services
 
