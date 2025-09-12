@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import api from "../lib/api";
 
 type Item = {
-  video_id: string; title: string;
-  status: "uploaded"|"processed"|"processing"|"failed";
-  processed_url?: string;
+  ID: string;
+  Title: string;
+  Status: "uploaded" | "processed" | "processing" | "failed" | "published";
+  ProcessedURL?: string;
 };
 
 export default function MyVideos() {
@@ -17,17 +18,17 @@ export default function MyVideos() {
       <h1>My Videos</h1>
       <div className="list">
         {items.map(v => (
-          <div className="item" key={v.video_id}>
+          <div className="item" key={v.ID}>
             <div className="thumb" />
             <div>
-              <div className="title">{v.title}</div>
-              <div className="meta">{v.processed_url ? "Ready to watch" : "Waiting / processing"}</div>
+              <div className="title">{v.Title}</div>
+              <div className="meta">{v.ProcessedURL ? "Ready to watch" : "Waiting / processing"}</div>
             </div>
             <div style={{display:"grid", gap:8, justifyItems:"end"}}>
-              <span className={`badge ${v.status}`}>{v.status}</span>
+              <span className={`badge ${v.Status}`}>{v.Status}</span>
               <div style={{display:"flex", gap:8}}>
-                <Link to={`/videos/${v.video_id}`} className="btn">Details</Link>
-                {v.processed_url && <a className="btn" href={v.processed_url} target="_blank">Download</a>}
+                <Link to={`/videos/${v.ID}`} className="btn">Details</Link>
+                {v.ProcessedURL && <a className="btn" href={v.ProcessedURL} target="_blank">Download</a>}
               </div>
             </div>
           </div>
