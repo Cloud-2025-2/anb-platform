@@ -173,6 +173,59 @@ export default function () {
   sleep(1);
 }
 
+
+
+### ´upload_and_poll.js´
+
+```js
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export let options = {
+  stages: [
+    { duration: '1m', target: 10 },
+    { duration: '3m', target: 25 },
+    { duration: '3m', target: 50 },
+    { duration: '1m', target: 0 },
+  ],
+  thresholds: {
+    http_req_failed: ['rate<0.01'],
+  },
+};
+
+const BASE = __ENV.BASE_URL || 'https://';
+const USER = __ENV.USER_EMAIL || 'user@test.com';
+const PASS = __ENV.USER_PASS || 'secret';
+const FILE = __ENV.FILE_PATH || '/data/video_50mb.mp4';
+
+export default function () {
+  const login = http.post(
+    `${BASE}/api/auth/login`,
+    JSON.stringify({ email: USER, password: PASS }),
+    { headers: { 'Content-Type': 'application/json' } },
+  );
+  check(login, { 'login 200': (r) => r.status === 200 });
+  const token = login.json('token');
+
+  const form = {
+    video_file: http.file(open(FILE, 'b'), 'video_50mb.mp4', 'video/mp4'),
+    title: `k6-upload-${__VU}-${Date.now()}`,
+  };
+  const up = http.post(`${BASE}/api/videos`, form, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  check(up, { 'upload 201/200': (r) => r.status === 201 || r.status === 200 });
+
+  for (let i = 0; i < 30; i++) {
+    const my = http.get(`${BASE}/api/videos/my`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (my.status === 200 && JSON.stringify(my.body).includes('READY')) break;
+    sleep(2);
+  }
+}´´´
+
+
 ## 13. Ejecución
 
 
