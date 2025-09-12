@@ -381,7 +381,6 @@ body.theme-light .card-body .bg-danger {
   left: 0px;
   bottom: 4px;
   top: 0;
-  bottom: 0;
   margin: auto 0;
   -webkit-transition: 0.4s;
   transition: 0.4s;
@@ -4639,7 +4638,7 @@ $(".prettyPrint").each(function () {
         return remarkable.render(trim(markdown));
     }
     function trim(string) {
-        return string ? string.replace(/^ +| +$/gm, "") : string;
+    return string ? string.replace(/^(?: +)|(?: +$)/gm, "") : string;
     }
 </script>
 
@@ -4744,31 +4743,95 @@ $(document).ready(function(){
 <!-- Filter Action for the Iterations -->
 
 <script>
-$("#filterInput").on("input paste", function() {
-    var value = $(this).val();
-    $("#iterationList li").filter(function() {
-	    $("#showOnlyFailures").data("clickCount") ? $("#showOnlyFailures").click():null;
-        $(this).toggle($(this).text().indexOf(value) > -1)
+$(function () {
+  // Click en items de iteración
+  $("#iterationList").on("click", "li", function () {
+    $("#iterationSelected").text("Iteration " + $(this).text() + " selected");
+  });
+
+  // Filtro por texto (input/paste)
+  $("#filterInput").on("input paste", function () {
+    const value = ($(this).val() || "").toString().toLowerCase();
+
+    // Si hay un modo "solo fallos" activado, lo apagamos explícitamente (antes era un ternario sin efecto claro)
+    const clickCount = $("#showOnlyFailures").data("clickCount") || 1;
+    if (clickCount > 1) {
+      $("#showOnlyFailures").trigger("click");
+    }
+
+    // Recorremos los LI y mostramos/ocultamos según el filtro (usar .each, no .filter para efectos secundarios)
+    $("#iterationList li").each(function () {
+      const match = $(this).text().toLowerCase().includes(value);
+      $(this).toggle(match);
     });
+  });
+
+  // Botón: mostrar solo fallidas / mostrar todas
+  $("#showOnlyFailures").on("click", function () {
+    let clickCount = $(this).data("clickCount") || 1;
+
+    // Si hay texto en el filtro y vamos a activar "solo fallidas", limpiamos el filtro
+    if ($("#filterInput").val() !== "" && clickCount === 1) {
+      $("#filterInput").val("").trigger("input");
+    }
+
+    // Si no hay una iteración fallida seleccionada y es la primera activación, clic en la primera fallida
+    const selectedFailed = $('#iterationList li').filter(function () {
+      const hasBottom = ($(this).css('border-bottom') || '').includes("solid");
+      return hasBottom && $(this).hasClass('itFailed');
+    });
+
+    if (selectedFailed.length === 0 && clickCount === 1) {
+      const firstFailed = $("#iterationList li.itFailed")[0];
+      if (firstFailed) firstFailed.click();
+    }
+
+    // Mostrar/ocultar aprobadas y contenedores de éxito
+    $("#iterationList li.itPassed").toggle();
+    $('div.bg-success [id*=requests]').parents('[class^="row iteration-"]').toggle();
+
+    // Toggle del estado del botón (usa if en vez de ternario “huérfano”)
+    clickCount = (clickCount > 1) ? 1 : (clickCount + 1);
+    $(this).html(clickCount > 1 ? "Show All Iterations" : "Show Failed Iterations");
+    $(this).data("clickCount", clickCount);
+  });
 });
 </script>
 
-<!-- Showing the Failed Interations -->
-
+<!-- Showing the Failed Iterations -->
+ 
 <script>
-$('#showOnlyFailures').on('click', function(e) {
-    let clickCount = $(this).data("clickCount") || 1
-	$("#filterInput").val()!="" && clickCount==1 ? $("#filterInput").val('').trigger('input'): null;
-    let selectedIteration = $('#iterationList li').filter(function () {
-        return $(this).css('border-bottom').indexOf("solid") > -1 && $(this).hasClass('itFailed');
+  $('#showOnlyFailures').on('click', function (e) {
+    let clickCount = $(this).data('clickCount') || 1;
+
+    // Si hay texto en el filtro y vamos a activar "solo fallidas", limpiar filtro
+    if ($('#filterInput').val() !== '' && clickCount === 1) {
+      $('#filterInput').val('').trigger('input');
+    }
+
+    // ¿Hay alguna iteración fallida actualmente "seleccionada" (bordes + clase)?
+    const selectedIteration = $('#iterationList li').filter(function () {
+      const border = ($(this).css('border-bottom') || '');
+      return border.includes('solid') && $(this).hasClass('itFailed');
     });
-    selectedIteration.length || clickCount > 1 ? null : $("#iterationList li.itFailed")[0].click()
-    $("#iterationList li.itPassed").toggle()
-    $("div.bg-success [id*=requests]").parents('[class^="row iteration-"]').toggle();
-    clickCount = clickCount > 1 ? 1 : ++clickCount;
-    clickCount > 1 ? $("#showOnlyFailures").html("Show All Iterations") : $("#showOnlyFailures").html("Show Failed Iterations");
-    $(this).data("clickCount", clickCount)
-})
+
+    // Si NO hay una fallida seleccionada y es la primera activación, clic en la primera fallida
+    if (selectedIteration.length === 0 && clickCount === 1) {
+      const firstFailed = $('#iterationList li.itFailed')[0];
+      if (firstFailed) firstFailed.click();
+    }
+
+    // Mostrar/ocultar aprobadas y los bloques de éxito
+    $('#iterationList li.itPassed').toggle();
+    $('div.bg-success [id*=requests]').parents('[class^="row iteration-"]').toggle();
+
+    // Alternar estado del botón y persistir el contador
+    clickCount = (clickCount > 1) ? 1 : (clickCount + 1);
+    $('#showOnlyFailures').html(
+      clickCount > 1 ? 'Show All Iterations' : 'Show Failed Iterations'
+    );
+    $(this).data('clickCount', clickCount);
+  });
 </script>
 </body>
 </html>
