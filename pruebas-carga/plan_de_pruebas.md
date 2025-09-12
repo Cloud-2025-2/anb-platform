@@ -90,7 +90,7 @@ flowchart LR
     Worker[Worker/Consumer] --> Kafka
     Worker --> Storage[(Almacenamiento)]
   end
-  Client -->|HTTPs| Nginx
+  Client -->|HTTPs| Nginx´´´
 
 
 
