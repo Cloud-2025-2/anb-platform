@@ -317,8 +317,6 @@ To ensure high performance and reduce the load on the database, a caching strate
 - (1) `users` —— (N) `votes`
 - (1) `videos` —— (N) `votes`
 
-
-
 ## 4. Entidad `tasks`
 
 **Propósito:** gestionar tareas asíncronas sobre los videos.
@@ -341,35 +339,6 @@ To ensure high performance and reduce the load on the database, a caching strate
 **Relaciones:**
 - (1) `videos` —— (N) `tasks`
 
-
-
-## 5. Entidad `tokens` *(opcional)*
-
-**Propósito:** almacenar refresh tokens.
-
-**Atributos:**
-- `id: uuid` — **PK**
-- `user_id: uuid` — **FK → users.id**
-- `token_type: text` — ej. `refresh`
-- `token_hash: text` — **único**
-- `expires_at: timestamptz` — no nulo
-- `revoked: boolean` — default `false`
-- `created_at: timestamptz` — no nulo
-
-
-
-## 6. Entidad `tags` y `video_tags` *(opcional)*
-
-**Propósito:** etiquetas asociadas a videos.
-
-**tags**
-- `id: uuid` — **PK**
-- `name: text` — único
-
-**video_tags**
-- `video_id: uuid` — **FK → videos.id**
-- `tag_id: uuid` — **FK → tags.id**
-- **PK compuesta** `(video_id, tag_id)`
 
 ## Reglas de negocio clave
 
