@@ -9,10 +9,17 @@ import (
 	"github.com/Cloud-2025-2/anb-platform/internal/domain"
 )
 
+type RankingRow struct {
+	Position int    `json:"position"`
+	Username string `json:"username"`
+	City     string `json:"city"`
+	Votes    int64  `json:"votes"`
+}
+
 type VoteRepository interface {
 	CastOnce(userID, videoID uuid.UUID) error
 	CountByVideo(videoID uuid.UUID) (int64, error)
-	TopByCity(limit int, city string) ([]struct{ VideoID uuid.UUID; Votes int64 }, error)
+	TopByCity(limit int, city string) ([]RankingRow, error)
 }
 
 type voteRepo struct{ db *gorm.DB }
@@ -41,14 +48,17 @@ func (r *voteRepo) CountByVideo(videoID uuid.UUID) (int64, error) {
 	return n, err
 }
 
-func (r *voteRepo) TopByCity(limit int, city string) ([]struct{ VideoID uuid.UUID; Votes int64 }, error) {
-	var rows []struct{ VideoID uuid.UUID; Votes int64 }
+func (r *voteRepo) TopByCity(limit int, city string) ([]RankingRow, error) {
+	var rows []RankingRow
 	q := r.db.Table("votes v").
-		Select("v.video_id, COUNT(*) as votes").
+		Select("ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as position, CONCAT(u.first_name, ' ', u.last_name) as username, u.city, COUNT(*) as votes").
 		Joins("JOIN videos vd ON vd.id = v.video_id AND vd.is_public_for_vote = true").
-		Group("v.video_id").
+		Joins("JOIN users u ON u.id = vd.user_id").
+		Group("u.id, u.first_name, u.last_name, u.city").
 		Order("votes DESC").
 		Limit(limit)
-	if city != "" { q = q.Joins("JOIN users u ON u.id = vd.user_id AND u.city = ?", city) }
+	if city != "" { 
+		q = q.Where("u.city = ?", city) 
+	}
 	return rows, q.Scan(&rows).Error
 }

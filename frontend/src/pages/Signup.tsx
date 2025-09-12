@@ -37,28 +37,28 @@ export default function Signup() {
     setMsg(null);
 
     if (!/.+@.+\..+/.test(form.email)) {
-      setMsg({ kind: "err", text: "Email inválido" });
+      setMsg({ kind: "err", text: "Invalid email" });
       return;
     }
     if (form.password1.length < 6) {
-      setMsg({ kind: "err", text: "La contraseña debe tener al menos 6 caracteres" });
+      setMsg({ kind: "err", text: "Password must be at least 6 characters" });
       return;
     }
     if (form.password1 !== form.password2) {
-      setMsg({ kind: "err", text: "Las contraseñas no coinciden" });
+      setMsg({ kind: "err", text: "Passwords do not match" });
       return;
     }
 
     try {
       setLoading(true);
       await api.post("/auth/signup", form);
-      setMsg({ kind: "ok", text: "Cuenta creada. Ahora inicia sesión." });
+      setMsg({ kind: "ok", text: "Account created. You can now log in." });
       setForm(INITIAL);
     } catch (err: unknown) {
       const ax = err as AxiosError<{ message?: string }>;
       setMsg({
         kind: "err",
-        text: ax.response?.data?.message ?? "No se pudo crear la cuenta",
+        text: ax.response?.data?.message ?? "Could not create account",
       });
     } finally {
       setLoading(false);

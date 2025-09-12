@@ -11,13 +11,13 @@ export default function Upload() {
 
   const onPick = (f: File | null) => {
     if (!f) return setFile(null);
-    if (f.type !== "video/mp4") return setMsg("Solo se permite MP4");
-    if (f.size > MAX_MB * 1024 * 1024) return setMsg("Máximo 100 MB");
+    if (f.type !== "video/mp4") return setMsg("Only MP4 files are allowed");
+    if (f.size > MAX_MB * 1024 * 1024) return setMsg("Maximum 100 MB");
     setMsg(null); setFile(f);
   };
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); if (!file) return setMsg("Selecciona un MP4");
+    e.preventDefault(); if (!file) return setMsg("Please select an MP4 file");
     const fd = new FormData();
     fd.append("title", title);
     fd.append("video_file", file);
@@ -26,9 +26,9 @@ export default function Upload() {
       const { data } = await api.post<{message?:string}>("/videos/upload", fd, {
         headers:{ "Content-Type":"multipart/form-data" }
       });
-      setMsg(data?.message ?? "Subido. Procesamiento en curso.");
+      setMsg(data?.message ?? "Uploaded. Processing in progress.");
       setTitle(""); setFile(null);
-    } catch { setMsg("Error al subir"); }
+    } catch { setMsg("Upload error"); }
     finally { setLoading(false); }
   };
 

@@ -19,7 +19,11 @@ export default function MyVideos() {
       <div className="list">
         {items.map(v => (
           <div className="item" key={v.ID}>
-            <div className="thumb" />
+            <div className="thumb">
+              <div style={{background: '#f0f0f0', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '24px'}}>
+                🎥
+              </div>
+            </div>
             <div>
               <div className="title">{v.Title}</div>
               <div className="meta">{v.ProcessedURL ? "Ready to watch" : "Waiting / processing"}</div>
@@ -32,7 +36,7 @@ export default function MyVideos() {
             </div>
           </div>
         ))}
-        {items.length===0 && <div className="helper">Aún no tienes videos.</div>}
+        {items.length===0 && <div className="helper">You don't have any videos yet.</div>}
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ export default function Login() {
       setToken(data.access_token);
       nav("/upload");
     } catch {
-      setMsg("Credenciales inválidas");
+      setMsg("Invalid credentials");
     } finally { setLoading(false); }
   };
 

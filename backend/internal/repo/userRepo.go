@@ -11,6 +11,7 @@ type UserRepository interface {
 	FindByEmail(email string) (*domain.User, error)
 	FindByID(id uuid.UUID) (*domain.User, error)
 	DeleteByID(id uuid.UUID) error
+	GetDistinctCities() ([]string, error)
 }
 
 type userRepo struct{ db *gorm.DB }
@@ -65,4 +66,13 @@ func (r *userRepo) DeleteByID(id uuid.UUID) error {
 		// Finally delete the user
 		return tx.Delete(&user).Error
 	})
+}
+
+func (r *userRepo) GetDistinctCities() ([]string, error) {
+	var cities []string
+	err := r.db.Model(&domain.User{}).
+		Distinct("city").
+		Where("city != ''").
+		Pluck("city", &cities).Error
+	return cities, err
 }

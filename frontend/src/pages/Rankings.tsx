@@ -2,31 +2,29 @@ import { useEffect, useState } from "react";
 import api from "../lib/api";
 
 type Row = { position?: number; username?: string; city?: string; votes: number };
-type RankResp = Row[] | { data: Row[]; total_pages?: number };
 
 export default function Rankings() {
   const [rows, setRows] = useState<Row[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
   const [city, setCity] = useState<string>("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const load = async () => {
-    const { data } = await api.get<RankResp>("/public/rankings", {
-      params: { city: city || undefined, page, limit: 10 }
+    const { data } = await api.get<Row[]>("/public/rankings", {
+      params: { city: city || undefined, limit: 50 }
     });
-
-    if (Array.isArray(data)) {
-      setRows(data);
-      setTotalPages(1);
-    } else {
-      setRows(data.data ?? []);
-      setTotalPages(data.total_pages ?? 1);
-    }
+    setRows(data);
+    setTotalPages(1); // No pagination needed since we get all results
   };
 
-  useEffect(() => { load(); }, [city, page]);
-
-  useEffect(() => { load(); }, [city, page]);
+  useEffect(() => { 
+    load(); 
+    // Load cities list
+    api.get<string[]>("/public/cities")
+      .then(r => setCities(r.data))
+      .catch(() => {}); // Ignore errors, fallback to hardcoded cities
+  }, [city, page]);
 
   return (
     <div>
@@ -35,8 +33,7 @@ export default function Rankings() {
       <div style={{display:"flex", gap:12, marginBottom:10}}>
         <select className="select" value={city} onChange={e=>{setPage(1); setCity(e.target.value);}}>
           <option value="">All cities</option>
-          {/* si quieres una lista dinámica de ciudades, podrías cargarla de /public/rankings?cities=1 */}
-          <option>Bogotá</option><option>Medellín</option><option>Cali</option>
+          {cities.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
 
@@ -48,12 +45,12 @@ export default function Rankings() {
           {rows.map((r, i) => (
             <tr key={i}>
               <td>#{r.position ?? (i + 1 + (page-1)*10)}</td>
-              <td>{r.username ?? "Usuario"}{r.city ? ` (${r.city})` : ""}</td>
+              <td>{r.username ?? "User"}{r.city ? ` (${r.city})` : ""}</td>
               <td>{r.votes}</td>
             </tr>
           ))}
           {rows.length===0 && (
-            <tr><td colSpan={3} className="helper" style={{padding:20}}>Sin resultados.</td></tr>
+            <tr><td colSpan={3} className="helper" style={{padding:20}}>No results.</td></tr>
           )}
         </tbody>
       </table>

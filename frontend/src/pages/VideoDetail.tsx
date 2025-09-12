@@ -4,9 +4,9 @@ import api from "../lib/api";
 import type { AxiosError } from "axios";
 
 type Detail = {
-  ID: string; Title: string; Status: "uploaded"|"processed"|"processing"|"failed";
-  OriginalURL?: string; ProcessedURL?: string; votes?: number;
-  is_public?: boolean; // si el backend lo expone; si no, omitimos la condición
+  ID: string; Title: string; Status: "uploaded"|"processed"|"processing"|"failed"|"published";
+  OriginalURL?: string; ProcessedURL?: string;
+  is_public?: boolean;
 };
 
 export default function VideoDetail() {
@@ -18,21 +18,21 @@ export default function VideoDetail() {
   useEffect(() => {
     api.get<Detail>(`/videos/${id}`)
       .then(r => setD(r.data))
-      .catch(() => setMsg("No se pudo cargar el detalle"));
+      .catch(() => setMsg("Could not load video details"));
   }, [id]);
 
   const remove = async () => {
-  if (!confirm("¿Eliminar video? Esta acción no se puede deshacer.")) return;
+  if (!confirm("Delete video? This action cannot be undone.")) return;
   try {
     await api.delete(`/videos/${id}`);
     nav("/my-videos");
   } catch (err: unknown) { 
     const ax = err as AxiosError<{ message?: string }>;
-    setMsg(ax.response?.data?.message ?? "No se pudo eliminar");
+    setMsg(ax.response?.data?.message ?? "Could not delete video");
   }
 };
 
-  if (!d) return <div className="helper">Cargando…</div>;
+  if (!d) return <div className="helper">Loading...</div>;
 
   return (
     <div>
@@ -41,12 +41,21 @@ export default function VideoDetail() {
         {d.ProcessedURL ? (
           <video src={d.ProcessedURL} controls style={{width:"100%", borderRadius:"12px"}} />
         ) : (
-          <div className="thumb" style={{width:"100%", height:320}} />
+          <div className="thumb" style={{width:"100%", height:320, borderRadius:"12px", background:"#f0f0f0", display:"flex", alignItems:"center", justifyContent:"center", color:"#666", fontSize:"48px"}}>
+            {d.Status === "processing" ? "⏳" : "🎥"}
+          </div>
         )}
         <div style={{display:"flex", gap:10, marginTop:12, flexWrap:"wrap"}}>
           <span className={`badge ${d.Status}`}>{d.Status}</span>
-          {/* Borra solo si no está publicado para votación (si no tienes el flag, deja visible y el backend valida) */}
-          {!d.is_public && <button className="btn btn-danger" onClick={remove}>Eliminar</button>}
+          {/* Borra solo si no está publicado para votación */}
+          {d.is_public !== true && (
+            <button
+              className="btn btn-danger"
+              onClick={remove}
+            >
+              Delete
+            </button>
+          )}
         </div>
         {msg && <div className="error" style={{marginTop:8}}>{msg}</div>}
       </div>

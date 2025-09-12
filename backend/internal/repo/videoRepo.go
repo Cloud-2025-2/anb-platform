@@ -26,7 +26,7 @@ func (r *videoRepo) Create(v *domain.Video) error {
 
 func (r *videoRepo) FindByUser(userID uuid.UUID) ([]domain.Video, error) {
 	var out []domain.Video
-	err := r.db.Where("user_id = ?", userID).
+	err := r.db.Preload("User").Where("user_id = ?", userID).
 		Order("uploaded_at DESC").
 		Find(&out).Error
 	return out, err
@@ -34,7 +34,7 @@ func (r *videoRepo) FindByUser(userID uuid.UUID) ([]domain.Video, error) {
 
 func (r *videoRepo) FindByIDForUser(id, userID uuid.UUID) (*domain.Video, error) {
 	var v domain.Video
-	if err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&v).Error; err != nil {
+	if err := r.db.Preload("User").Where("id = ? AND user_id = ?", id, userID).First(&v).Error; err != nil {
 		return nil, err
 	}
 	return &v, nil
@@ -42,7 +42,7 @@ func (r *videoRepo) FindByIDForUser(id, userID uuid.UUID) (*domain.Video, error)
 
 func (r *videoRepo) FindByID(id uuid.UUID) (*domain.Video, error) {
 	var v domain.Video
-	if err := r.db.First(&v, "id = ?", id).Error; err != nil {
+	if err := r.db.Preload("User").First(&v, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return &v, nil
@@ -84,7 +84,7 @@ func (r *videoRepo) ListPublic(limit, offset int) ([]domain.Video, error) {
 		offset = 0
 	}
 	var out []domain.Video
-	err := r.db.Where("status = ? AND is_public_for_vote = ?", "published", true).
+	err := r.db.Preload("User").Preload("Votes").Where("status = ? AND is_public_for_vote = ?", "published", true).
 		Order("uploaded_at DESC").
 		Limit(limit).
 		Offset(offset).

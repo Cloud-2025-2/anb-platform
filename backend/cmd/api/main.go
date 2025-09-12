@@ -143,6 +143,7 @@ func main() {
 	// Público sin auth
 	r.GET("/api/public/videos", publicH.ListVideos)
 	r.GET("/api/public/rankings", publicH.Rankings)
+	r.GET("/api/public/cities", publicH.GetCities)
 
 	log.Printf("API listening on :%s", cfg.AppPort)
 	_ = r.Run(":" + cfg.AppPort)

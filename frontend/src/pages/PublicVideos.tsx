@@ -3,7 +3,13 @@ import api from "../lib/api";
 import { isLoggedIn } from "../lib/auth";
 import type { AxiosError } from "axios";
 
-type Pub = { video_id: string; title: string; processed_url?: string; votes?: number };
+type Pub = { 
+  ID: string; 
+  Title: string; 
+  ProcessedURL?: string; 
+  User: { FirstName: string; LastName: string; };
+  Votes?: Array<any>; 
+};
 
 export default function PublicVideos() {
   const [items, setItems] = useState<Pub[]>([]);
@@ -12,16 +18,19 @@ export default function PublicVideos() {
   useEffect(() => {
     api.get<Pub[]>("/public/videos")
       .then(r => setItems(r.data))
-      .catch(() => setMsg("No se pudo cargar la lista pública"));
+      .catch(() => setMsg("Could not load public videos"));
   }, []);
 
   const vote = async (id: string) => {
     try {
       await api.post(`/public/videos/${id}/vote`);
-      setMsg("Voto registrado.");
+      setMsg("Vote registered successfully.");
+      // Reload the videos to get updated vote counts
+      const { data } = await api.get<Pub[]>("/public/videos");
+      setItems(data);
     } catch (err: unknown) {
       const ax = err as AxiosError<{message?:string}>;
-      setMsg(ax.response?.data?.message ?? "No se pudo votar"); // si ya votó, backend devuelve 400 con mensaje
+      setMsg(ax.response?.data?.message ?? "Could not vote"); // si ya votó, backend devuelve 400 con mensaje
     }
   };
 
@@ -31,19 +40,23 @@ export default function PublicVideos() {
       {msg && <div className="helper" style={{marginBottom:10}}>{msg}</div>}
       <div className="list">
         {items.map(v => (
-          <div className="item" key={v.video_id}>
-            <div className="thumb" />
+          <div className="item" key={v.ID}>
+            <div className="thumb">
+              <div style={{background: '#f0f0f0', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '24px'}}>
+                🎥
+              </div>
+            </div>
             <div>
-              <div className="title">{v.title}</div>
-              <div className="meta">{(v.votes ?? 0)} votos</div>
+              <div className="title">{v.Title}</div>
+              <div className="meta">by {v.User.FirstName} {v.User.LastName} • {(v.Votes?.length ?? 0)} votes</div>
             </div>
             <div style={{display:"flex", gap:8}}>
-              {v.processed_url && <a className="btn" href={v.processed_url} target="_blank">Ver</a>}
-              {isLoggedIn() && <button className="btn btn-primary" onClick={() => vote(v.video_id)}>Votar</button>}
+              {v.ProcessedURL && <a className="btn" href={v.ProcessedURL} target="_blank">Watch</a>}
+              {isLoggedIn() && <button className="btn btn-primary" onClick={() => vote(v.ID)}>Vote</button>}
             </div>
           </div>
         ))}
-        {items.length===0 && <div className="helper">Aún no hay videos públicos.</div>}
+        {items.length===0 && <div className="helper">No public videos yet.</div>}
       </div>
     </div>
   );

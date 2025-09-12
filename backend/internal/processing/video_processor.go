@@ -176,6 +176,7 @@ func (vp *VideoProcessor) concatenateVideos(introPath, mainPath, outroPath, outp
 	}).OverWriteOutput().Run()
 }
 
+
 func (vp *VideoProcessor) GetVideoInfo(inputPath string) (duration float64, width, height int, err error) {
 	// This would typically use ffprobe, but for simplicity we'll return defaults
 	// In a real implementation, you'd parse ffprobe output

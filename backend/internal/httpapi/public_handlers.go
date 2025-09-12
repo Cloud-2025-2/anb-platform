@@ -137,17 +137,27 @@ func (h *PublicHandlers) Rankings(c *gin.Context) {
 		return
 	}
 	
-	// Convert to cache format
-	rankings := make([]cache.RankingResult, len(rows))
-	for i, row := range rows {
-		rankings[i] = cache.RankingResult{
-			VideoID: row.VideoID,
-			Votes:   row.Votes,
-		}
-	}
-	
 	// Store in cache (ignore errors to avoid blocking the response)
-	_ = h.cache.SetRankings(ctx, limit, city, rankings)
+	// Note: We'll skip caching for now since the data structure changed
+	// _ = h.cache.SetRankings(ctx, limit, city, rankings)
 	
 	c.JSON(http.StatusOK, rows)
+}
+
+// GetCities godoc
+// @Summary Get list of cities
+// @Description Get all cities that have users with videos
+// @Tags Public
+// @Produce json
+// @Success 200 {array} string "List of cities"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /public/cities [get]
+func (h *PublicHandlers) GetCities(c *gin.Context) {
+	cities, err := h.users.GetDistinctCities()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving cities"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, cities)
 }

@@ -126,6 +126,8 @@ services:
       - backend
     environment:
       - NODE_ENV=production
+    volumes:
+      - ./backend/storage:/var/www/storage
 
 volumes:
   postgres_data:
