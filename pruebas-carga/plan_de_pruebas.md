@@ -173,11 +173,6 @@ export default function () {
   sleep(1);
 }
 
-
-
-### `upload_and_poll.js`
-
-```js
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
@@ -227,74 +222,4 @@ export default function () {
     sleep(2);
   }
 }
-
-
----
-
-## 13. Ejecución
-
-
-# Escenario A
-´´´BASE_URL=https://<tu-dominio> USER_EMAIL=user@test.com USER_PASS=secret \
-k6 run scripts/login_and_list.js'''
-
-# Escenario B
-´´BASE_URL=https://<tu-dominio> USER_EMAIL=user@test.com USER_PASS=secret \
-FILE_PATH=/data/video_50mb.mp4 k6 run scripts/upload_and_poll.js´´´
-
-## 14. Resultados y Evidencia
-
-Tabla resumen
-
-| Escenario | Usuarios   | Duración | p95 (ms) | p99 (ms) | Throughput (req/s) | Errores (%) | CPU (%) | MEM (GB) | Kafka lag   |
-|-----------|------------|----------|----------|----------|---------------------|-------------|---------|----------|-------------|
-| A         | 10→25→50   | 8 min    | —        | —        | —                   | —           | —       | —        | —           |
-| B         | 10→25→50   | 8 min    | —        | —        | —                   | —           | —       | —        | —           |
-| C         | N/A        | 10 min   | N/A      | N/A      | tareas/min          | —           | —       | —        | —           |
-
-
-## 15. Interpretación
-Capacidad actual: soporta hasta X usuarios con p95 < 800 ms.
-
-Cuellos de botella: CPU, I/O o Kafka lag según carga.
-
-Errores: registrar causas (timeout, límite de tamaño, etc.).
-
-Batch: latencia promedio de tarea Y s, sin DLQ.
-
-## 16. Plan de Mejora
-Ajustar Nginx (client_max_body_size, timeouts, gzip).
-
-Optimizar DB pooling y workers.
-
-Configurar alertas de Kafka (lag, DLQ).
-
-Escalar vCPU/memoria si necesario.
-
-Implementar observabilidad adicional (tracing, métricas de negocio).
-
-## 17. Riesgos
-Latencia de red puede sesgar resultados.
-
-Archivos de prueba deben ser no sensibles.
-
-VM de carga debe tener recursos suficientes.
-
-## 18. Anexos
-Scripts k6 (/pruebas-carga/scripts/).
-
-Colección Postman (para setup).
-
-Dashboards exportados (Grafana).
-
-Evidencias de ejecución (JSON/CSV y screenshots).
-
-Guía de despliegue reproducible del entorno.
-
-yaml
-Copy code
-
-
-
-
 
