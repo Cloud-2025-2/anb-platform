@@ -149,8 +149,11 @@ Batch: latencia de tarea (enqueue→done), reintentos.
 
 ## 14. Resultados y Evidencia Tabla 
 
-|resumen | Escenario | Usuarios | Duración | p95 (ms) | p99 (ms) | Throughput (req/s) | Errores (%) | CPU (%) | MEM (GB) | Kafka lag |
-|-----------|------------|----------|----------|----------|---------------------|-------------|---------|----------|-------------| | A | 10→25→50 | 8 min | — | — | — | — | — | — | — | | B | 10→25→50 | 8 min | — | — | — | — | — | — | — | | C | N/A | 10 min | N/A | N/A | tareas/min | — | — | — | — |
+| Escenario | Usuarios | Duración | p95 (ms) | p99 (ms) | Throughput (req/s) | Errores (%) | CPU (%) | MEM (GB) | Kafka lag | 
+|-----------|------------|----------|----------|----------|---------------------|-------------|---------|----------|-------------| 
+| A | 10→25→50 | 8 min | — | — | — | — | — | — | — | 
+| B | 10→25→50 | 8 min | — | — | — | — | — | — | — | 
+| C | N/A | 10 min | N/A | N/A | tareas/min | — | — | — | — |
 
 ## 15. Interpretación Capacidad actual: soporta hasta X usuarios con p95 < 800 ms. 
 
