@@ -91,7 +91,186 @@ flowchart LR
     Worker[Worker/Consumer] --> Kafka
     Worker --> Storage[(Almacenamiento)]
   end
-  Client -->|HTTPs| Nginx´´´
+  Client -->|HTTPs| Nginx
+
+---
+## 9. Flujo de Proceso (Upload → Procesamiento → Publicación)
+
+```
+mermaid
+sequenceDiagram
+  participant U as Usuario
+  participant API as API
+  participant K as Kafka
+  participant W as Worker
+  participant ST as Storage
+  participant DB as Postgres
+
+  U->>API: POST /api/videos
+  API->>ST: Guardar archivo
+  API->>K: Encolar job
+  K-->>W: Mensaje de proceso
+  W->>ST: Leer video, procesar
+  W->>DB: Actualizar estado
+  U->>API: GET /api/videos/my
+
+---
+## 10. Datos de Prueba
+Usuario de prueba con rol estándar.
+
+Archivos de video: 50MB, 75MB, 100MB.
+
+Limpieza de datos y archivos al finalizar.
+
+## 11. Métricas a Recopilar
+Web/API: latencia (p50, p95, p99), errores, throughput.
+
+Sistema: CPU, RAM, disco, red.
+
+Kafka: lag, throughput, reintentos, DLQ.
+
+Batch: latencia de tarea (enqueue→done), reintentos.
+
+## 12. Scripts Base (k6)
+login_and_list.js
+js
+Copy code
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export let options = {
+  stages: [
+    { duration: '1m', target: 10 },
+    { duration: '2m', target: 25 },
+    { duration: '2m', target: 50 },
+    { duration: '2m', target: 0  },
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<800', 'p(99)<1500'],
+    http_req_failed: ['rate<0.01'],
+  },
+};
+
+const BASE = __ENV.BASE_URL || 'https://<tu-dominio>';
+const USER = __ENV.USER_EMAIL || 'user@test.com';
+const PASS = __ENV.USER_PASS  || 'secret';
+
+export default function () {
+  const resLogin = http.post(`${BASE}/api/auth/login`, JSON.stringify({ email: USER, password: PASS }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  check(resLogin, { 'login 200': (r) => r.status === 200 });
+  const token = resLogin.json('token');
+
+  const resList = http.get(`${BASE}/api/videos`, { headers: { Authorization: `Bearer ${token}` } });
+  check(resList, { 'list 200': (r) => r.status === 200 });
+
+  sleep(1);
+}
+upload_and_poll.js
+js
+Copy code
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export let options = {
+  stages: [
+    { duration: '1m', target: 10 },
+    { duration: '3m', target: 25 },
+    { duration: '3m', target: 50 },
+    { duration: '1m', target: 0  },
+  ],
+  thresholds: {
+    http_req_failed: ['rate<0.01'],
+  },
+};
+
+const BASE = __ENV.BASE_URL || 'https://<tu-dominio>';
+const USER = __ENV.USER_EMAIL || 'user@test.com';
+const PASS = __ENV.USER_PASS  || 'secret';
+const FILE = __ENV.FILE_PATH  || '/data/video_50mb.mp4';
+
+export default function () {
+  const login = http.post(`${BASE}/api/auth/login`, JSON.stringify({ email: USER, password: PASS }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  check(login, { 'login 200': (r) => r.status === 200 });
+  const token = login.json('token');
+
+  const form = {
+    video_file: http.file(open(FILE, 'b'), 'video_50mb.mp4', 'video/mp4'),
+    title: `k6-upload-${__VU}-${Date.now()}`
+  };
+  const up = http.post(`${BASE}/api/videos`, form, { headers: { Authorization: `Bearer ${token}` } });
+  check(up, { 'upload 201/200': (r) => r.status === 201 || r.status === 200 });
+
+  for (let i = 0; i < 30; i++) {
+    const my = http.get(`${BASE}/api/videos/my`, { headers: { Authorization: `Bearer ${token}` } });
+    if (my.status === 200 && JSON.stringify(my.body).includes('READY')) break;
+    sleep(2);
+  }
+}
+## 13. Ejecución
+
+
+# Escenario A
+´´´BASE_URL=https://<tu-dominio> USER_EMAIL=user@test.com USER_PASS=secret \
+k6 run scripts/login_and_list.js'''
+
+# Escenario B
+´´BASE_URL=https://<tu-dominio> USER_EMAIL=user@test.com USER_PASS=secret \
+FILE_PATH=/data/video_50mb.mp4 k6 run scripts/upload_and_poll.js´´´
+
+## 14. Resultados y Evidencia
+
+Tabla resumen
+
+|Escenario	|Usuarios	|Duración	|p95 (ms)	|p99 (ms)	|Throughput (req/s)	|Errores (%)	|CPU (%)	|MEM (GB)	|Kafka lag|
+|A	|10→25→50	|8 min	|—|	—|	—|	—|	—|	—|	—|
+|B	|10→25→50	|8 min	|—|	|—	|—	|—	|—	|—	|—|
+|C	|N/A	|10 min	|N/A	|N/A	tareas/min|	—	|—	|-	|—|
+
+## 15. Interpretación
+Capacidad actual: soporta hasta X usuarios con p95 < 800 ms.
+
+Cuellos de botella: CPU, I/O o Kafka lag según carga.
+
+Errores: registrar causas (timeout, límite de tamaño, etc.).
+
+Batch: latencia promedio de tarea Y s, sin DLQ.
+
+## 16. Plan de Mejora
+Ajustar Nginx (client_max_body_size, timeouts, gzip).
+
+Optimizar DB pooling y workers.
+
+Configurar alertas de Kafka (lag, DLQ).
+
+Escalar vCPU/memoria si necesario.
+
+Implementar observabilidad adicional (tracing, métricas de negocio).
+
+## 17. Riesgos
+Latencia de red puede sesgar resultados.
+
+Archivos de prueba deben ser no sensibles.
+
+VM de carga debe tener recursos suficientes.
+
+## 18. Anexos
+Scripts k6 (/pruebas-carga/scripts/).
+
+Colección Postman (para setup).
+
+Dashboards exportados (Grafana).
+
+Evidencias de ejecución (JSON/CSV y screenshots).
+
+Guía de despliegue reproducible del entorno.
+
+yaml
+Copy code
+
 
 
 
