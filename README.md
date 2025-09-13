@@ -9,7 +9,7 @@
 
 * [Entrega1.md](docs/Entrega_1/Entrega1.md)
 
-* [Video de sustentación](sustentacion/Entrega1/SustentacionEntrega1.md)
+* [Video de sustentación](https://youtu.be/R29sdc5Pr-8)
 
 
 # SonarQube
