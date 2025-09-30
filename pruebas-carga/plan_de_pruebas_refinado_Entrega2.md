@@ -143,16 +143,30 @@ sequenceDiagram
 ## Escenario A - Autenticación
 
 ```bash
-BASE_URL=https://<ALB-dns> USER_EMAIL=user@test.com USER_PASS=secret \
+BASE_URL=https://<alb-dns> \
+USER_EMAIL=user@test.com USER_PASS=secret \
+VUS=5 DURATION=3m \
 k6 run scripts/login_and_list.js
 ```
 
 ## Escenario B - Upload y seguimiento
 
 ```bash
-BASE_URL=https://<ALB-dns> USER_EMAIL=user@test.com USER_PASS=secret \
+BASE_URL=https://<alb-dns> \
+USER_EMAIL=user@test.com USER_PASS=secret \
 FILE_PATH=/data/video_50mb.mp4 \
+VUS=3 DURATION=5m \
 k6 run scripts/upload_and_poll.js
+```
+
+## Escenario C - Batch 
+
+```bash
+BASE_URL=https://<alb-dns> \
+USER_EMAIL=user@test.com USER_PASS=secret \
+FILE_PATH=/data/video_75mb.mp4 \
+VUS=2 DURATION=10m \
+k6 run scripts/scenarioC_batch_processing.js
 ```
 
 # 13. Resultados
@@ -161,6 +175,7 @@ k6 run scripts/upload_and_poll.js
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | A | 8 | 8m | - | - | - | - | - | - | - | - | - | - |
 | B | 8 | 8m | - | - | - | - | - | - | - | - | - | - |
+| C | 4 | 10m | N/A | N/A | N/A | tareas/min | - | - | - | - | - | - |
 
 
 # 14. Interpretación y Capacidad Esperada
@@ -197,5 +212,5 @@ Resultados no son extrapolables directamente a producción si instancias mayores
 
 * Colección Postman (para setup).
 * Scripts k6 en `/pruebas-carga/scripts/`.
-* Dashboards (CloudWatch JSON export).
+* Dashboards (CloudWatch JSON export): CloudWatch -> Dashboards -> Create dashboard -> Import JSON
 * Resultados en CSV/JSON con screenshots de métricas.

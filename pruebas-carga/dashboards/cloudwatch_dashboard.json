@@ -1,0 +1,91 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [ "AWS/EC2", "CPUUtilization", "InstanceId", "i-web-instance-id", { "label": "Web CPU" } ],
+          [ ".", "CPUUtilization", "InstanceId", "i-worker-instance-id", { "label": "Worker CPU" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "EC2 CPU Utilization (%)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [ "CWAgent", "mem_used_percent", "InstanceId", "i-web-instance-id", { "label": "Web Memory %" } ],
+          [ ".", "mem_used_percent", "InstanceId", "i-worker-instance-id", { "label": "Worker Memory %" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "EC2 Memory Usage (%)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [ "AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "anb-postgres" ],
+          [ ".", "DatabaseConnections", "DBInstanceIdentifier", "anb-postgres" ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "RDS Metrics (CPU, Connections)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [ "AWS/Kafka", "MessagesInPerSec", "ClusterName", "anb-msk" ],
+          [ ".", "MessagesOutPerSec", "ClusterName", "anb-msk" ],
+          [ ".", "ConsumerLag", "ClusterName", "anb-msk" ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Kafka Metrics (MSK)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 12,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [ "AWS/EFS", "DataReadIOBytes", "FileSystemId", "fs-efs-id" ],
+          [ ".", "DataWriteIOBytes", "FileSystemId", "fs-efs-id" ],
+          [ ".", "BurstCreditBalance", "FileSystemId", "fs-efs-id" ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "EFS Metrics"
+      }
+    }
+  ]
+}
