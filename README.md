@@ -16,7 +16,7 @@
 
 * [Entrega2.md](docs/Entrega_2/Entrega2.md)
 
-* Video de sustentación: TBD
+* [Video de sustentación](https://youtu.be/W1k17CUcvL0)
 
 
 # Deployment
