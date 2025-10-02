@@ -12,5 +12,12 @@
 * [Video de sustentación](https://youtu.be/R29sdc5Pr-8)
 
 
+## Entrega 2
+
+* 
+
+* 
+
+
 # SonarQube
 https://sonarcloud.io/project/overview?id=Cloud-2025-2_anb-platform
