@@ -8,36 +8,36 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 echo "Starting NFS server setup at $(date)"
 
 # Update system
-yum update -y
+sudo yum update -y
 
 # Install NFS server
-yum install -y nfs-utils
+sudo yum install -y nfs-utils
 
 # Start and enable NFS
-systemctl enable nfs-server
-systemctl start nfs-server
+sudo systemctl enable nfs-server
+sudo systemctl start nfs-server
 
 # Create export directory structure
-mkdir -p /exports/anb-storage
-mkdir -p /exports/anb-storage/videos
-mkdir -p /exports/anb-storage/thumbnails
-mkdir -p /exports/anb-storage/processed
-mkdir -p /exports/anb-storage/original
+sudo mkdir -p /exports/anb-storage
+sudo mkdir -p /exports/anb-storage/videos
+sudo mkdir -p /exports/anb-storage/thumbnails
+sudo mkdir -p /exports/anb-storage/processed
+sudo mkdir -p /exports/anb-storage/original
 
 # Set permissions (ec2-user for Amazon Linux)
-chown -R ec2-user:ec2-user /exports/anb-storage
-chmod -R 755 /exports/anb-storage
+sudo chown -R ec2-user:ec2-user /exports/anb-storage
+sudo chmod -R 777 /exports/anb-storage
 
 # Configure NFS exports for entire VPC
 # IMPORTANT: Update 10.0.0.0/16 with your VPC CIDR
 VPC_CIDR="10.0.0.0/16"
-echo "/exports/anb-storage ${VPC_CIDR}(rw,sync,no_subtree_check,no_root_squash)" > /etc/exports
+echo "/exports/anb-storage ${VPC_CIDR}(rw,sync,no_subtree_check,no_root_squash)" | sudo tee /etc/exports
 
 # Apply exports
-exportfs -ra
+sudo exportfs -ra
 
 # Verify
-exportfs -v
+sudo exportfs -v
 
 # Get private IP
 PRIVATE_IP=$(hostname -I | awk '{print $1}')
@@ -60,7 +60,7 @@ ${PRIVATE_IP}:/exports/anb-storage /mnt/nfs/anb-storage nfs defaults,_netdev 0 0
 Setup completed at: $(date)
 EOF
 
-chown ec2-user:ec2-user /home/ec2-user/nfs-info.txt
+sudo chown ec2-user:ec2-user /home/ec2-user/nfs-info.txt
 
 echo "NFS server setup completed successfully at $(date)"
 echo "NFS Server IP: ${PRIVATE_IP}"

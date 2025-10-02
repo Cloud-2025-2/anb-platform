@@ -15,39 +15,42 @@ WEBSERVER_PUBLIC_IP="ec2-xx-xxx-xxx-xxx.compute-1.amazonaws.com"  # REQUIRED: Yo
 # === END CONFIGURATION SECTION ===
 
 # Update system
-yum update -y
+sudo yum update -y
 
 # Install Docker
-yum install -y docker git nfs-utils
+sudo yum install -y docker git nfs-utils
 
 # Start Docker
-systemctl start docker
-systemctl enable docker
+sudo systemctl start docker
+sudo systemctl enable docker
 
 # Add ec2-user to docker group
-usermod -aG docker ec2-user
+sudo usermod -aG docker ec2-user
 
 # Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 # Verify installations
 docker --version
 docker-compose --version
 
 # Create NFS mount point
-mkdir -p /mnt/nfs/anb-storage
+sudo mkdir -p /mnt/nfs/anb-storage
 
 # Mount NFS
 echo "Mounting NFS from ${NFS_SERVER_IP}..."
-mount -t nfs ${NFS_SERVER_IP}:/exports/anb-storage /mnt/nfs/anb-storage
+sudo mount -t nfs ${NFS_SERVER_IP}:/exports/anb-storage /mnt/nfs/anb-storage
 
 # Add to /etc/fstab for persistence
-echo "${NFS_SERVER_IP}:/exports/anb-storage /mnt/nfs/anb-storage nfs defaults,_netdev 0 0" >> /etc/fstab
+echo "${NFS_SERVER_IP}:/exports/anb-storage /mnt/nfs/anb-storage nfs defaults,_netdev 0 0" | sudo tee -a /etc/fstab
 
 # Verify NFS mount
 df -h | grep nfs
+
+# Set NFS permissions
+sudo chmod -R 777 /mnt/nfs/anb-storage
 
 # Clone repository
 cd /home/ec2-user
@@ -55,11 +58,11 @@ git clone https://github.com/Cloud-2025-2/anb-platform.git
 cd anb-platform
 
 # Set ownership
-chown -R ec2-user:ec2-user /home/ec2-user/anb-platform
+sudo chown -R ec2-user:ec2-user /home/ec2-user/anb-platform
 
 # Copy assets to NFS storage
 if [ -d "backend/assets" ]; then
-    cp -r backend/assets/* /mnt/nfs/anb-storage/
+    sudo cp -r backend/assets/* /mnt/nfs/anb-storage/
     echo "Assets copied to NFS storage"
 fi
 
@@ -81,16 +84,16 @@ cd /home/ec2-user/anb-platform
 export $(cat .env.webserver | xargs)
 
 # Build and start services
-docker-compose -f docker-compose.webserver.yml up --build -d
+sudo docker-compose -f docker-compose.webserver.yml up --build -d
 
 # Wait for services to start
 echo "Waiting for services to start..."
 sleep 45
 
 # Create Kafka topics
-docker exec anb-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic video-processing --partitions 3 --replication-factor 1 --if-not-exists || true
-docker exec anb-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic video-processing-retry --partitions 3 --replication-factor 1 --if-not-exists || true
-docker exec anb-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic video-processing-dlq --partitions 1 --replication-factor 1 --if-not-exists || true
+sudo docker exec anb-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic video-processing --partitions 3 --replication-factor 1 --if-not-exists || true
+sudo docker exec anb-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic video-processing-retry --partitions 3 --replication-factor 1 --if-not-exists || true
+sudo docker exec anb-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic video-processing-dlq --partitions 1 --replication-factor 1 --if-not-exists || true
 
 # Get public IP
 PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
@@ -123,7 +126,7 @@ docker ps
 Setup completed at: $(date)
 EOF
 
-chown ec2-user:ec2-user /home/ec2-user/webserver-info.txt
+sudo chown ec2-user:ec2-user /home/ec2-user/webserver-info.txt
 
 echo "========================================"
 echo "Webserver setup completed at $(date)"
