@@ -1,4 +1,4 @@
-# Entrega 1: Implementación de una API REST escalable con orquestación de tareas asíncronas para el procesamiento de archivos
+# Entrega 2 Despliegue básico en la nube migración de una aplicación web en la nube pública
 
 ## Team
 
@@ -6,348 +6,164 @@
 * Ana M. Sánchez - am.sanchezm1@uniandes.edu.co
 * David Tobón Molina - d.tobonm2@uniandes.edu.co
 
-## Architecture
+## Resumen ejecutivo
 
-- **Backend API**: Go with Gin framework
-- **Database**: PostgreSQL with GORM
-- **Message Queue**: Apache Kafka with Zookeeper
-- **Caching**: Redis for rankings cache
-- **Video Processing**: FFmpeg with custom workers
-- **Storage**: Local file system
-- **Authentication**: JWT tokens
+Se desplegó la plataforma ANB en AWS con separación de responsabilidades en tres instancias EC2 (Web, Worker, File Server/NFS) y una base de datos administrada en Amazon RDS (PostgreSQL). La red reside en una VPC dedicada con subred pública para EC2 y subredes privadas para la BD mediante un DB Subnet Group. El almacenamiento compartido se implementó con NFS en una EC2 (por lineamiento no se usa EFS). Se aplicó endurecimiento de Security Groups y se documentan flujos, puertos y evidencias.
 
-## Quickstart
 
-### Prerequisites
+## Topología de red (AWS)
 
-- [Docker](https://docs.docker.com/get-docker/) (version 20.10 or higher)
-- [Docker Compose](https://docs.docker.com/compose/install/) (version 2.0 or higher)
+-VPC: anb-vpc-vpc — vpc-0fdbfd1b3f0b091d6 (CIDR 10.0.0.0/16)
 
-### Running the Project
+-Subred pública: subnet-0f8c9b58f0c1558dc (10.0.1.0/24 · us-east-1a)
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Cloud-2025-2/anb-platform.git
-   cd anb-platform
-   ```
+-DB Subnet Group (privadas): anb-db-subnet-group (AZ us-east-1b)
 
-   Or download the source code in a _.zip_ file.
+-Subnets: subnet-0f64f40a8b3719f2e, subnet-0abc25dcfb3c3b440
 
-2. **Start all services**
-   ```bash
-   docker-compose up --build -d
-   ```
+-Internet Gateway (IGW): igw-01b5b241146d0aae3
 
-   This starts:
-   - PostgreSQL database
-   - Redis cache
-   - Zookeeper
-   - Kafka broker
-   - Backend API (port 8000): `http://localhost:8000`
-   - Frontend (port 3000): `http://localhost:3000`
-   - Video processing workers (2 replicas by default)
 
-   ```bash
-   # Scale video processors
-   docker-compose up -d --scale video-processor=5
-   ```
+### Tabla de recursos
 
-3. **Check service status**
-   ```bash
-   docker-compose ps
-   ```
+| Recurso | Detalle | ID/Nombre |
+|---|---|---|
+| VPC | 10.0.0.0/16 | vpc-0fdbfd1b3f0b091d6 |
+| Subred pública | 10.0.1.0/24 (us-east-1a) | subnet-0f8c9b58f0c1558dc |
+| DB Subnet Group | privadas (us-east-1b) | anb-db-subnet-group |
+| DB Subnets | privadas | subnet-0f64f40a8b3719f2e, subnet-0abc25dcfb3c3b440 |
+| IGW | Internet Gateway | igw-01b5b241146d0aae3 |
+| EC2 Web | t3.small (AL2023) | i-0dd43473abb183009 — 10.0.1.251 / 13.222.125.199 |
+| EC2 NFS | t3.small (AL2023) | i-0c701f7f0a3cef980 — 10.0.1.120 / 50.16.62.134 |
+| EC2 Worker | t3.small (AL2023) | i-0e6235950d0553984 — 10.0.1.197 / 3.89.60.26 |
+| RDS PostgreSQL | db.t3.small (us-east-1b) | anbdb |
+| Endpoint RDS | puerto 5432 | anbdb.c1om664e4sm8.us-east-1.rds.amazonaws.com |
+| AMI EC2 | Amazon Linux 2023 | ami-08982f1c5bf93d976 |
 
-4. **View logs (optional)**
-   ```bash
-   # View all services logs
-   docker-compose logs -f
-   
-   # View specific service logs
-   docker-compose logs -f <service_name>
-   ```
 
-### Accessing the Application
-- **Frontend**: http://localhost:3000/
 
-1. **Install depedencies**
-   ```bash
-   cd /Users/hernandosanchez/Desktop/anb-platform/frontend
-   npm install
-   ```
-   
-2. **Run the frontend**
-   ```bash
-   npm run dev -- --port 5174 
-   ```
-3. **Open the application**
+### Ruteo
 
-   copy and paste the link on the browser. 
 
-### Stopping Services
+- **RT pública** `rtb-<public>` (asociada a `subnet-0f8c9b58f0c1558dc`)
+  - `10.0.0.0/16 → local`
+  - `0.0.0.0/0 → igw-<id>`
+- **RT privadas (DB)** `rtb-<private>` (asociadas al **DB Subnet Group**)
+  - `10.0.0.0/16 → local`
+  - _(sin salida a Internet; si se requiere, usar NAT)_
 
+---
+
+## Componentes lógicos y responsabilidades
+- **Web (EC2):** expone HTTP/HTTPS, monta `/mnt/shared` vía NFS y conecta a RDS.
+- **Worker (EC2):** procesa tareas asíncronas, monta `/mnt/shared` y conecta a RDS.
+- **File Server NFS (EC2):** exporta `/srv/files` por NFSv4 a Web/Worker.
+- **RDS (PostgreSQL):** persistencia relacional en subred privada; acceso limitado por SG.
+
+---
+
+## Seguridad (Security Groups y puertos)
+
+| SG | Regla Inbound | Origen | Comentario |
+|---|---|---|---|
+| **SG-web** `sg-025c9d0efa425de88` | 80/TCP | 0.0.0.0/0 | HTTP público |
+|  | 443/TCP | 0.0.0.0/0 | HTTPS público |
+|  | 22/TCP | TU_IP/32 | SSH admin (recomendado) |
+| **SG-worker** `sg-0052549e294bd7fed` | 22/TCP | TU_IP/32 | SSH admin |
+| **SG-nfs** `sg-08c955a1ff18e0abb` | 2049/TCP | SG-web, SG-worker | NFSv4 |
+| **SG-rds** `sg-0dda5df77faf6144f` | 5432/TCP | SG-web, SG-worker | PostgreSQL |
+
+- **Outbound:** All traffic _(o mínimo: Web/Worker → 2049 a SG-nfs y 5432 a SG-rds)._  
+- **Endurecimiento aplicado:** eliminar puertos no usados; SSH siempre restringido a IP de admin.
+
+---
+
+## Almacenamiento compartido (NFS sobre EC2)
+
+**Servidor (anb-nfs — 10.0.1.120):**
 ```bash
-# Stop all services
-docker-compose down
+sudo dnf -y install nfs-utils
+sudo mkdir -p /srv/files && sudo chown ec2-user:ec2-user /srv/files
+echo "/srv/files 10.0.1.0/24(rw,sync,no_root_squash,no_subtree_check)" | sudo tee -a /etc/exports
+sudo systemctl enable --now nfs-server
+sudo exportfs -rav
 
-# Stop and remove volumes (This will delete all data)
-docker-compose down -v
+
+---
+
+### Clientes (anb-web y anb-worker)
+```bash
+sudo dnf -y install nfs-utils
+sudo mkdir -p /mnt/shared
+echo "10.0.1.120:/srv/files /mnt/shared nfs4 defaults 0 0" | sudo tee -a /etc/fstab
+sudo mount -a
 ```
 
+---
 
-### health-check
+### Smoke
+```bash
+# En Web/Users/hernandosanchez/Downloads/ANB_AWS_Despliegue.md
+echo ok | sudo tee /mnt/shared/test.txt
 
-```
-http://localhost:8000/api/health
-```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/signup` - User registration
-- `POST /api/auth/login` - User login, returns JWT token which expires in 1 hour
-
-### Video Management (JWT Required)
-- `POST /api/videos/upload` - Upload video for processing
-- `GET /api/videos` - List user's videos
-- `GET /api/videos/{id}` - Get video details
-- `DELETE /api/videos/{id}` - Delete video (if not published)
-- `PUT /api/videos/{id}/publish` - Publish video for voting
-- `POST /api/public/videos/{id}/vote` - Vote for video
-
-### Public Endpoints
-- `GET /api/public/videos` - List published videos
-- `GET /api/public/rankings` - Get player rankings
-
-*Check the OpenAPI or Postman docs for details.*
-
-### OpenAPI Documentation
-
-```
-http://localhost:8000/swagger/index.html
+# En Worker
+cat /mnt/shared/test.txt   # (debe existir)
 ```
 
-### Postman Documentation
+---
 
-Access the public documentation via this [link](https://documenter.getpostman.com/view/37575255/2sB3HnMLYF)
+## Base de datos (RDS PostgreSQL)
 
-### API Tests with Postman
+**Instancia:** `anbdb` (db.t3.small, AZ us-east-1b)  
+**Endpoint:** `anbdb.c1om664e4sm8.us-east-1.rds.amazonaws.com:5432`  
+**Acceso:** solo desde **SG-web** y **SG-worker**.
 
-```
-npm install
-npm run test
-```
-
-To generate an *.html* test report:
-
-```
-npm run test:report
+#### Prueba de conectividad (desde EC2)
+```bash
+sudo dnf -y install postgresql15
+psql "host=anbdb.c1om664e4sm8.us-east-1.rds.amazonaws.com port=5432 dbname=<DB> user=<USER> password=<PASS> sslmode=require" -c '\conninfo'
 ```
 
-Note: `Vote for Video` test takes around 20 seconds to run while newman waits for the video to be processed and made public.
+#### Variables de entorno (apps)
+```ini
+DB_HOST=anbdb.c1om664e4sm8.us-east-1.rds.amazonaws.com
+DB_PORT=5432
+DB_NAME=<tu_db>
+DB_USER=<tu_user>
+DB_PASSWORD=<tu_pass>
+FILES_DIR=/mnt/shared
+```
+
+## Aprovisionamiento (user-data de referencia)
+
+**Web/Worker (montaje NFS + cliente psql):**
+```bash
+#!/bin/bash
+set -euo pipefail
+dnf -y update
+dnf -y install nfs-utils postgresql15
+mkdir -p /mnt/shared
+echo "10.0.1.120:/srv/files /mnt/shared nfs4 defaults 0 0" >> /etc/fstab
+mount -a
+# aquí: instalar runtime/app (nginx/node/python/go) y cargar .env
+```
+
+## Observabilidad, operación y costos
+
+- **Métricas:** CPU, RAM, red y disco por instancia (Monitoring de EC2) + Performance Insights en RDS si aplica.  
+- **Logs:** sistema y aplicación (ideal: CloudWatch Logs).  
+- **Backups:** snapshots automáticos de RDS (retención corta para dev).  
+- **Costos:** detener EC2 fuera de uso y eliminar RDS al finalizar para evitar cargos.
+
+
+## Riesgos y mitigaciones
+
+| Riesgo                | Impacto        | Mitigación                                                                 |
+|-----------------------|----------------|-----------------------------------------------------------------------------|
+| Exposición de puertos | Seguridad      | SG de mínimo privilegio; SSH solo desde IP admin                           |
+| Cuello de botella NFS | Rendimiento    | Monitorear p95/p99; evaluar gp3 con más IOPS o separar server              |
+| Single-AZ             | Disponibilidad | Aceptado por lineamiento; documentado como trade-off                       |
+| Credenciales en host  | Seguridad      | Variables de entorno/secret store; rotación post-demo                      |
 
-## Video Processing
 
-### Video Status Lifecycle
 
-A video goes through several states from upload to being publicly available for voting. This lifecycle is managed automatically by the system.
-
-- `uploaded`: The initial status when a video is successfully uploaded by a user. The video is pending for processing.
-- `processing`: The video has been picked up by a worker and is actively being processed.
-- `processed`: The video has been successfully processed (trimmed, transcoded, watermarked, etc.) and is ready to be published by the user.
-- `published`: The user has published the video, making it visible to the public for voting.
-- `failed`: The video processing failed after multiple retry attempts. The task is moved to the Dead Letter Queue (DLQ) for manual inspection.
-
-
-### Kafka Topics
-
-- `video-processing` - Main processing queue
-- `video-processing-retry` - Retry queue with exponential backoff
-- `video-processing-dlq` - Dead Letter Queue for failed processing
-
-### Processing Steps
-
-1. **Upload**: Video uploaded via API, task sent to Kafka
-2. **Queue**: Kafka consumers pick up processing tasks
-3. **Process**: FFmpeg pipeline applies all transformations
-4. **Store**: Processed video saved to storage
-5. **Update**: Database updated with processed video info
-
-### Processing Steps
-
-The video processing pipeline is a sequence of automated steps executed by our workers after a video is uploaded. Each step is designed to standardize the content for the platform.
-
-1.  **Upload & Enqueue**: A user uploads a video via the API. The video is saved to a temporary location, it's status is updated to `uploaded`, and a processing task with the video's metadata is sent to the `video-processing` Kafka topic.
-
-2.  **Dequeue & Process**: A worker from the consumer group picks up the task from the Kafka topic. The video status is updated to `processing`.
-
-3.  **Transformations**: The worker executes an FFmpeg pipeline with the following transformations:
-    *   **Trim**: The video is trimmed to a maximum duration of **30 seconds**.
-    *   **Resolution & Aspect Ratio**: The video is resized to **720p** (1280x720) and set to a **16:9** aspect ratio. Black bars are added if necessary to maintain the original aspect ratio.
-    *   **Audio Removal**: The audio track is removed from the video.
-    *   **Watermark**: The ANB logo (`logo.png`) is added as a watermark to the bottom-right corner of the video.
-    *   **Concatenation**: An **intro** (`intro.mp4`) and **outro** (`outro.mp4`) sequence are added to the beginning and end of the main video. These sequences are appended at the en dof the pipeline since they already have the required resolution and aspect ratio.
-
-4.  **Store**: The final, processed video is saved to the designated persistent storage.
-
-5.  **Update**: The video's record in the database is updated with the new status (`processed`) and the URL to the processed file. If the processing fails, the retry mechanism is initiated.
-
-
-### Retry Mechanism
-
-- **Max Retries**: 3 attempts
-- **Backoff**: Exponential (1s, 2s, 4s)
-- **DLQ**: Failed videos sent to Dead Letter Queue
-- **Monitoring**: All processing events logged
-
-### Performance Tuning
-
-- **Kafka Partitions**: Increase for higher throughput
-- **Consumer Groups**: Scale workers horizontally
-- **Redis Cache**: Tune TTL based on traffic patterns
-- **FFmpeg**: Optimize encoding settings for quality/speed balance
-
-## Security
-
-- JWT authentication for protected endpoints (expiry time of 1 hour)
-- Input validation on all API endpoints
-- File type validation for uploads
-
-## Caching Strategy
-
-To ensure high performance and reduce the load on the database, a caching strategy is implemented for the player rankings endpoint (`/api/public/rankings`), which is expected to receive high traffic.
-
--   **Technology**: Redis is used as the caching layer due to its speed and efficiency.
-
--   **What is Cached**: The results of the rankings query are cached. The cache key is dynamically generated based on the query parameters (`limit` and `city`), ensuring that different filtered views of the rankings are cached separately. For example, a request for the top 10 players in Bogotá will have a different cache key than a request for the top 20 players overall.
-
--   **Cache TTL (Time-to-Live)**: Each cache entry is set with a configurable Time-to-Live (TTL), 3 minutes by deafault. This ensures that the data remains fresh and is automatically removed from the cache after a certain period, preventing stale data from being served.
-
--   **Cache Invalidation**: The cache is proactively invalidated to ensure users see up-to-date rankings. The `InvalidateAll` function is called whenever a significant event occurs (e.g., a new vote is cast), which deletes all cached ranking data and forces the system to fetch fresh results from the database on the next request.
-
--   **Flow**:
-    1.  A request is made to the rankings endpoint.
-    2.  The system first checks Redis for a cached result using a key generated from the request parameters.
-    3.  **Cache Hit**: If the data is found in the cache, it is returned directly to the user.
-    4.  **Cache Miss**: If the data is not in the cache, the system queries the PostgreSQL database, stores the result in Redis with the defined TTL, and then returns the data to the user.
-
-# Modelo de Datos — ERD Detallado
-
-> Dominio: Plataforma para autenticación de usuarios, carga de videos, procesamiento asíncrono y votación.
-
-
-## Convenciones
-- **PK** = Clave primaria  
-- **FK** = Clave foránea  
-- **Tipos**: `uuid`, `text`, `int`, `smallint`, `boolean`, `timestamptz`  
-- **Estados (enums representados como text + CHECK)**:
-  - `videos.status ∈ {UPLOADED, PROCESSING, READY, FAILED}`
-  - `tasks.status ∈ {PENDING, RUNNING, DONE, FAILED, RETRY}`
-  - `votes.value ∈ {1, -1}`
-
-
-
-## 1. Entidad `users`
-
-**Propósito:** almacenar a los usuarios de la plataforma.
-
-**Atributos:**
-- `id: uuid` — **PK**
-- `name: text` — no nulo
-- `email: text` — no nulo, único
-- `password_hash: text` — no nulo
-- `role: text` — enum: `user | admin`
-- `created_at: timestamptz` — no nulo
-- `updated_at: timestamptz` — no nulo
-
-**Restricciones y reglas:**
-- `UNIQUE(email)`
-- El campo `role` determina permisos
-
-**Relaciones:**
-- (1) `users` —— (N) `videos`
-- (1) `users` —— (N) `votes`
-- (1) `users` —— (N) `tokens` *(opcional)*
-
-
-
-## 2. Entidad `videos`
-
-**Propósito:** representar el contenido subido.
-
-**Atributos:**
-- `id: uuid` — **PK**
-- `user_id: uuid` — **FK → users.id**
-- `title: text` — no nulo
-- `description: text` — opcional
-- `storage_path: text` — no nulo (ruta en FS o S3)
-- `mime_type: text` — no nulo, ej. `video/mp4`
-- `size_bytes: int` — no nulo, positivo
-- `status: text` — `UPLOADED|PROCESSING|READY|FAILED`
-- `ready_at: timestamptz` — opcional
-- `created_at: timestamptz` — no nulo
-- `updated_at: timestamptz` — no nulo
-
-**Restricciones y reglas:**
-- `FK user_id` con `ON DELETE CASCADE` o `RESTRICT`
-- Flujo de estados: `UPLOADED → PROCESSING → READY` o `FAILED`
-
-**Relaciones:**
-- (1) `videos` —— (N) `votes`
-- (1) `videos` —— (N) `tasks`
-- (N) `videos` —— (N) `tags` *(opcional, vía video_tags)*
-
-
-
-## 3. Entidad `votes`
-
-**Propósito:** registrar likes/dislikes.
-
-**Atributos:**
-- `id: uuid` — **PK**
-- `user_id: uuid` — **FK → users.id**
-- `video_id: uuid` — **FK → videos.id**
-- `value: smallint` — `1` o `-1`
-- `created_at: timestamptz` — no nulo
-
-**Restricciones y reglas:**
-- `UNIQUE(user_id, video_id)` — un voto por usuario por video
-- `ON DELETE CASCADE` en ambas FKs
-
-**Relaciones:**
-- (1) `users` —— (N) `votes`
-- (1) `videos` —— (N) `votes`
-
-## 4. Entidad `tasks`
-
-**Propósito:** gestionar tareas asíncronas sobre los videos.
-
-**Atributos:**
-- `id: uuid` — **PK**
-- `video_id: uuid` — **FK → videos.id**
-- `type: text` — ej. `transcode`, `thumbnail`
-- `status: text` — `PENDING|RUNNING|DONE|FAILED|RETRY`
-- `attempts: int` — default 0
-- `error_msg: text` — opcional
-- `enqueued_at: timestamptz` — no nulo
-- `started_at: timestamptz` — opcional
-- `finished_at: timestamptz` — opcional
-
-**Restricciones y reglas:**
-- Flujo esperado: `PENDING → RUNNING → DONE` o `FAILED/RETRY`
-- `ON DELETE CASCADE` en `video_id`
-
-**Relaciones:**
-- (1) `videos` —— (N) `tasks`
-
-
-## Reglas de negocio clave
-
-1. **Un voto por usuario por video** → `UNIQUE(user_id, video_id)`.  
-2. **Estados de video**: `UPLOADED → PROCESSING → READY` (o `FAILED`).  
-3. **Estados de tarea**: `PENDING → RUNNING → DONE` (o `FAILED/RETRY`).  
-4. **Permisos**: solo el `owner` o un `admin` pueden eliminar un video.  
-5. **Integridad de archivo**: validar `size_bytes > 0`, `mime_type` permitido.  
-
-
-# SonarQube
-https://sonarcloud.io/project/overview?id=Cloud-2025-2_anb-platform
