@@ -27,7 +27,7 @@ See [Entrega2.md](docs/Entrega_2/Entrega2.md) for local Docker Compose setup.
 ## AWS Production Deployment
 For deploying to AWS with 3 EC2 instances (Webserver, Workers, NFS):
 
-### 🚀 Automated Deployment (Recommended)
+### Automated Deployment (Recommended)
 * **User Data Deployment**: [USER_DATA_DEPLOYMENT_GUIDE.md](USER_DATA_DEPLOYMENT_GUIDE.md) - Fully automated, zero-config setup
   - Just paste scripts in EC2 user data and launch
   - Instances configure themselves automatically
