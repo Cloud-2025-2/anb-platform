@@ -8,8 +8,8 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 echo "Starting workers setup at $(date)"
 
 # === CONFIGURATION SECTION - EDIT THESE VALUES ===
-NFS_SERVER_IP="10.0.2.100"  # REQUIRED: Replace with your NFS server private IP
-WEBSERVER_PRIVATE_IP="10.0.1.100"  # REQUIRED: Replace with webserver private IP
+NFS_SERVER_IP="10.0.11.116"  # REQUIRED: Replace with your NFS server private IP
+WEBSERVER_PRIVATE_IP="10.0.1.224"  # REQUIRED: Replace with webserver private IP
 POSTGRES_PASSWORD="ChangeThisSecurePassword123!"  # REQUIRED: Must match webserver password
 WORKER_REPLICAS="3"  # Optional: Number of worker containers (default: 3)
 WORKER_CONCURRENCY="2"  # Optional: Concurrent tasks per worker (default: 2)

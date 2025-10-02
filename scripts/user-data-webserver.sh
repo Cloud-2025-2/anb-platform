@@ -8,10 +8,10 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 echo "Starting webserver setup at $(date)"
 
 # === CONFIGURATION SECTION - EDIT THESE VALUES ===
-NFS_SERVER_IP="10.0.2.100"  # REQUIRED: Replace with your NFS server private IP
+NFS_SERVER_IP="10.0.11.116"  # REQUIRED: Replace with your NFS server private IP
 POSTGRES_PASSWORD="ChangeThisSecurePassword123!"  # REQUIRED: Set a strong password
 JWT_SECRET="your-super-secure-jwt-secret-minimum-32-characters-here"  # REQUIRED: Set a secure JWT secret
-WEBSERVER_PUBLIC_IP="ec2-xx-xxx-xxx-xxx.compute-1.amazonaws.com"  # REQUIRED: Your EC2 public IP or domain
+WEBSERVER_PUBLIC_IP="ec2-107-23-232-213.compute-1.amazonaws.com"  # REQUIRED: Your EC2 public IP or domain
 # === END CONFIGURATION SECTION ===
 
 # Update system
