@@ -1,0 +1,56 @@
+version: '3.8'
+
+# Docker Compose for EC2 Workers Instance
+# This file runs: video-processor workers only
+# Workers connect to Kafka, Postgres on webserver EC2
+# Workers use NFS shared storage
+
+networks:
+  anb-network:
+    driver: bridge
+
+services:
+  video-processor:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    environment:
+      # Connect to PostgreSQL on webserver EC2 - IMPORTANT: Replace <WEBSERVER_PRIVATE_IP>
+      POSTGRES_HOST: ${WEBSERVER_PRIVATE_IP}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: anb_platform
+      POSTGRES_PORT: 5432
+      
+      # Connect to Kafka on webserver EC2 - IMPORTANT: Replace <WEBSERVER_PRIVATE_IP>
+      KAFKA_BROKERS: ${WEBSERVER_PRIVATE_IP}:9092
+      KAFKA_GROUP_ID: video-processors
+      
+      # Worker configuration
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+    volumes:
+      # Mount NFS storage - IMPORTANT: Replace with your NFS mount path
+      - /mnt/nfs/anb-storage:/root/storage
+      - ./backend/assets:/root/assets
+    networks:
+      - anb-network
+    restart: unless-stopped
+    deploy:
+      replicas: ${WORKER_REPLICAS:-3}
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+# Note: NFS storage should be mounted on host at /mnt/nfs/anb-storage
+# Before starting, run on workers EC2:
+# sudo mkdir -p /mnt/nfs/anb-storage
+# sudo mount -t nfs <NFS_EC2_IP>:/exports/anb-storage /mnt/nfs/anb-storage
+# Add to /etc/fstab for persistence:
+# <NFS_EC2_IP>:/exports/anb-storage /mnt/nfs/anb-storage nfs defaults,_netdev 0 0
+
+# To scale workers:
+# docker-compose -f docker-compose.workers.yml up -d --scale video-processor=5
