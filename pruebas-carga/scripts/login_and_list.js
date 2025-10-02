@@ -8,7 +8,7 @@ export let options = {
 
 export default function () {
   // Login
-  let loginRes = http.post(`http://107.23.232.213/api/auth/login`, JSON.stringify({
+  let loginRes = http.post(`http://107.23.232.213:8000/api/auth/login`, JSON.stringify({
     email: __ENV.USER_EMAIL || "user@example.com",
     password: __ENV.USER_PASS || "secret",
   }), {
@@ -23,7 +23,7 @@ export default function () {
   let token = loginRes.json('token');
 
   // List videos
-  let videosRes = http.get(`http://107.23.232.213/api/videos`, {
+  let videosRes = http.get(`http://107.23.232.213:8000/api/videos`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
