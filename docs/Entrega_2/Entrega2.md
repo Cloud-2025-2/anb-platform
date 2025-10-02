@@ -128,9 +128,6 @@ psql "host=anbdb.c1om664e4sm8.us-east-1.rds.amazonaws.com port=5432 dbname=<DB> 
 ```ini
 DB_HOST=anbdb.c1om664e4sm8.us-east-1.rds.amazonaws.com
 DB_PORT=5432
-DB_NAME=<tu_db>
-DB_USER=<tu_user>
-DB_PASSWORD=<tu_pass>
 FILES_DIR=/mnt/shared
 ```
 
