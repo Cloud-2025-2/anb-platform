@@ -19,7 +19,7 @@ runuser -l ubuntu -c '
     -e CORS_ALLOWED_ORIGINS="http://anb-platform-frontend.s3-website-us-east-1.amazonaws.com" \
     -e POSTGRES_HOST="anb-platform-db.cibipwvslz8o.us-east-1.rds.amazonaws.com" \
     -e POSTGRES_USER="postgres" \
-    -e POSTGRES_PASSWORD="X|qI3iSdd$(G(B2?6T7jmLQfD?(6" \
+    -e 'POSTGRES_PASSWORD=X|qI3iSdd$(G(B2?6T7jmLQfD?(6' \
     -e POSTGRES_DB="anb_platform" \
     --name api-server anb-api:latest
 '
