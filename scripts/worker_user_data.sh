@@ -16,9 +16,9 @@ runuser -l ubuntu -c '
   cd anb-platform/backend && \
   docker build -t anb-worker:latest -f Dockerfile.worker . && \
   docker run -d --restart always \
-    -e POSTGRES_HOST="anb-platform-db.cibipwvslz8o.us-east-1.rds.amazonaws.com" \
+    -e POSTGRES_HOST="anb-database.cibipwvslz8o.us-east-1.rds.amazonaws.com" \
     -e POSTGRES_USER="postgres" \
-    -e 'POSTGRES_PASSWORD=X|qI3iSdd$(G(B2?6T7jmLQfD?(6' \
+    -e POSTGRES_PASSWORD="anb-platform123" \
     -e POSTGRES_DB="anb_platform" \
     --name worker anb-worker:latest
 '
