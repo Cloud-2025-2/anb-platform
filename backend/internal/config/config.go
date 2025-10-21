@@ -46,7 +46,7 @@ func Load() *Config {
 		db := getenv("POSTGRES_DB", "db")
 		portP := getenv("POSTGRES_PORT", "5432")
 		pgURL = "host=" + host + " user=" + user + " password=" + pass +
-			" dbname=" + db + " port=" + portP + " sslmode=disable"
+			" dbname=" + db + " port=" + portP + " sslmode=require"
 	}
 
 	secret := os.Getenv("JWT_SECRET")
