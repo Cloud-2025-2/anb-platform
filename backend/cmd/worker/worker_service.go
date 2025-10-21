@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -32,8 +33,6 @@ func NewWorkerService(videos repo.VideoRepository, store storage.Storage, proces
 func (w *WorkerService) ProcessVideoWithID(videoID uuid.UUID, inputPath, outputPath string) error {
 	log.Printf("Worker processing video: %s -> %s (VideoID: %s)", inputPath, outputPath, videoID)
 
-	absInputPath, _ := filepath.Abs(inputPath)
-
 	// Get video from database using the provided ID
 	video, err := w.videos.FindByID(videoID)
 	if err != nil {
@@ -46,20 +45,35 @@ func (w *WorkerService) ProcessVideoWithID(videoID uuid.UUID, inputPath, outputP
 		log.Printf("Warning: failed to update video status to processing: %v", err)
 	}
 
+	// Download file from S3 to a temporary location
+	tempDir := os.TempDir()
+	localInputPath := filepath.Join(tempDir, filepath.Base(inputPath))
+	log.Printf("Downloading video from S3: %s -> %s", inputPath, localInputPath)
+	
+	if err := w.store.Download(filepath.Base(inputPath), localInputPath); err != nil {
+		video.Status = domain.VideoFailed
+		w.videos.Update(video)
+		return fmt.Errorf("failed to download video from S3: %w", err)
+	}
+	defer os.Remove(localInputPath)
+
 	// Use the exact outputPath provided - don't generate a new one
-	log.Printf("Processing video to output path: %s", outputPath)
+	localOutputPath := filepath.Join(tempDir, filepath.Base(outputPath))
+	log.Printf("Processing video to output path: %s", localOutputPath)
 
 	// Process the video using FFmpeg directly to the specified output path
-	if err := w.processor.ProcessVideo(absInputPath, outputPath); err != nil {
+	if err := w.processor.ProcessVideo(localInputPath, localOutputPath); err != nil {
 		// Update status to failed
 		video.Status = domain.VideoFailed
 		w.videos.Update(video)
+		os.Remove(localOutputPath)
 		return fmt.Errorf("video processing failed: %w", err)
 	}
+	defer os.Remove(localOutputPath)
 
 	// Upload processed video to storage (S3 or local)
 	processedFileName := filepath.Base(outputPath)
-	storedPath, err := w.store.Save(outputPath, processedFileName)
+	storedPath, err := w.store.Save(localOutputPath, processedFileName)
 	if err != nil {
 		video.Status = domain.VideoFailed
 		w.videos.Update(video)

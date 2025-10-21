@@ -13,6 +13,7 @@ import (
 
 type Storage interface {
 	Save(localTmpPath, destName string) (string, error)
+	Download(fileName, localDestPath string) error
 }
 
 type LocalStorage struct {
@@ -44,6 +45,24 @@ func (l *LocalStorage) Save(tmpPath, destName string) (string, error) {
 	}
 
 	return dst, nil
+}
+
+func (l *LocalStorage) Download(fileName, localDestPath string) error {
+	src := filepath.Join(l.basePath, fileName)
+	srcF, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcF.Close()
+
+	dstF, err := os.Create(localDestPath)
+	if err != nil {
+		return err
+	}
+	defer dstF.Close()
+
+	_, err = io.Copy(dstF, srcF)
+	return err
 }
 
 // S3Storage implements Storage interface for AWS S3
@@ -85,4 +104,27 @@ func (s *S3Storage) Save(tmpPath, destName string) (string, error) {
 
 	// Return S3 key (path in bucket)
 	return destName, nil
+}
+
+func (s *S3Storage) Download(fileName, localDestPath string) error {
+	// Download from S3
+	result, err := s.client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(fileName),
+	})
+	if err != nil {
+		return err
+	}
+	defer result.Body.Close()
+
+	// Create local file
+	file, err := os.Create(localDestPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Copy S3 object to local file
+	_, err = io.Copy(file, result.Body)
+	return err
 }
