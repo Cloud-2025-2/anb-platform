@@ -16,8 +16,8 @@ runuser -l ubuntu -c '
   cd anb-platform/backend && \
   docker build -t anb-api:latest -f Dockerfile . && \
   docker run -d --restart always -p 80:8000 \
-    -e CORS_ALLOWED_ORIGINS="anb-database.cibipwvslz8o.us-east-1.rds.amazonaws.com" \
-    -e POSTGRES_HOST="anb-platform-db.cibipwvslz8o.us-east-1.rds.amazonaws.com" \
+    -e CORS_ALLOWED_ORIGINS="http://anb-platform-frontend.s3-website-us-east-1.amazonaws.com" \
+    -e POSTGRES_HOST="anb-database.cibipwvslz8o.us-east-1.rds.amazonaws.com" \
     -e POSTGRES_USER="postgres" \
     -e POSTGRES_PASSWORD="anb-platform123" \
     -e POSTGRES_DB="anb_platform" \
