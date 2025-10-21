@@ -10,7 +10,10 @@ RUN go mod download
 COPY . .
 RUN go build -o video-worker ./cmd/worker
 
-FROM alpine:latest
+FROM alpine:3.20
+
+# Add a non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Install FFmpeg and other runtime dependencies
 RUN apk add --no-cache \
@@ -18,19 +21,20 @@ RUN apk add --no-cache \
     ca-certificates \
     tzdata
 
-WORKDIR /root/
+WORKDIR /home/appuser
 
-# Copy the binary from builder stage
-COPY --from=builder /app/video-worker .
+# Create necessary directories and set ownership
+RUN mkdir -p /home/appuser/storage /home/appuser/assets /home/appuser/temp && \
+    chown -R appuser:appgroup /home/appuser/storage /home/appuser/assets /home/appuser/temp
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /root/storage /root/assets /root/temp && \
-    chmod -R 755 /root/storage /root/assets /root/temp
+# Copy assets and set ownership
+COPY --chown=appuser:appgroup assets ./assets
 
-# Set executable permissions
-RUN chmod +x ./video-worker
+# Copy the binary from builder stage and set ownership
+COPY --chown=appuser:appgroup --from=builder /app/video-worker .
 
-# Ensure we run as root (explicit)
-USER root
+# Switch to the non-root user
+USER appuser
 
+# Run the binary
 CMD ["./video-worker"]
