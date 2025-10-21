@@ -57,9 +57,17 @@ func (w *WorkerService) ProcessVideoWithID(videoID uuid.UUID, inputPath, outputP
 		return fmt.Errorf("video processing failed: %w", err)
 	}
 
-	// The processed file should already be at the correct location
-	// Generate the URL based on the output path
-	processedURL := fmt.Sprintf("/storage/%s", filepath.Base(outputPath))
+	// Upload processed video to storage (S3 or local)
+	processedFileName := filepath.Base(outputPath)
+	storedPath, err := w.store.Save(outputPath, processedFileName)
+	if err != nil {
+		video.Status = domain.VideoFailed
+		w.videos.Update(video)
+		return fmt.Errorf("failed to save processed video: %w", err)
+	}
+
+	// Generate the URL based on stored path
+	processedURL := fmt.Sprintf("/storage/%s", storedPath)
 
 	// Update video record with processed information
 	now := time.Now()
@@ -79,7 +87,7 @@ func (w *WorkerService) ProcessVideoWithID(videoID uuid.UUID, inputPath, outputP
 		return fmt.Errorf("failed to update video record: %w", err)
 	}
 
-	log.Printf("Successfully processed video %s to %s", video.ID, outputPath)
+	log.Printf("Successfully processed video %s to %s", video.ID, storedPath)
 	return nil
 }
 

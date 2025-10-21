@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -83,7 +84,20 @@ func main() {
 	// Initialize cache with 3-minute TTL (within the 1-5 minute range requested)
 	rankingsCache := cache.NewRankingsCache(redisCli, 3*time.Minute)
 
-	store := storage.NewLocal("./storage")
+	// Storage service - use S3 if bucket is configured, otherwise use local
+	var store storage.Storage
+	if s3Bucket := os.Getenv("S3_BUCKET"); s3Bucket != "" {
+		var err error
+		store, err = storage.NewS3(s3Bucket)
+		if err != nil {
+			log.Fatalf("Failed to initialize S3 storage: %v", err)
+		}
+		log.Printf("Using S3 storage with bucket: %s", s3Bucket)
+	} else {
+		store = storage.NewLocal("./storage")
+		log.Println("Using local storage at ./storage")
+	}
+
 	videoSvc := videosvc.NewService(videosRepo, store, kafkaProducer)
 
 	// handlers
@@ -96,7 +110,7 @@ func main() {
 
 	// CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: cfg.AllowedOrigins,
+		AllowOrigins:     cfg.AllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

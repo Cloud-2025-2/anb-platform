@@ -34,11 +34,27 @@ func main() {
 	// Repositories
 	videosRepo := repo.NewVideoRepo(db.DB)
 
-	// Storage service
-	store := storage.NewLocal("./storage")
+	// Storage service - use S3 if bucket is configured, otherwise use local
+	var store storage.Storage
+	s3Bucket := os.Getenv("S3_BUCKET")
+	if s3Bucket != "" {
+		var err error
+		store, err = storage.NewS3(s3Bucket)
+		if err != nil {
+			log.Fatalf("Failed to initialize S3 storage: %v", err)
+		}
+		log.Printf("Using S3 storage with bucket: %s", s3Bucket)
+	} else {
+		store = storage.NewLocal("./storage")
+		log.Println("Using local storage at ./storage")
+	}
 
 	// Video processor
-	processor := processing.NewVideoProcessor("./temp", "./assets", "./storage")
+	storageDir := "./storage"
+	if s3Bucket != "" {
+		storageDir = s3Bucket // Use bucket name for S3
+	}
+	processor := processing.NewVideoProcessor("./temp", "./assets", storageDir)
 
 	// Kafka producer for retry/DLQ
 	producer, err := kafka.NewProducer(cfg.KafkaBrokers)

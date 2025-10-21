@@ -22,5 +22,6 @@ runuser -l ubuntu -c '
     -e POSTGRES_PASSWORD="anb-platform123" \
     -e POSTGRES_DB="anb_platform" \
     -e KAFKA_BROKERS="10.0.0.17:9092" \
+    -e S3_BUCKET="anb-platform-videos" \
     --name api-server anb-api:latest
 '
