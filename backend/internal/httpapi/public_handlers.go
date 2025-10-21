@@ -137,6 +137,11 @@ func (h *PublicHandlers) Rankings(c *gin.Context) {
 		return
 	}
 	
+	// Ensure we return an empty array instead of null
+	if rows == nil {
+		rows = []repo.RankingRow{}
+	}
+	
 	// Store in cache (ignore errors to avoid blocking the response)
 	// Note: We'll skip caching for now since the data structure changed
 	// _ = h.cache.SetRankings(ctx, limit, city, rankings)
@@ -157,6 +162,11 @@ func (h *PublicHandlers) GetCities(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving cities"})
 		return
+	}
+	
+	// Ensure we return an empty array instead of null
+	if cities == nil {
+		cities = []string{}
 	}
 	
 	c.JSON(http.StatusOK, cities)

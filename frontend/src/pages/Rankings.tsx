@@ -14,7 +14,7 @@ export default function Rankings() {
     const { data } = await api.get<Row[]>("/public/rankings", {
       params: { city: city || undefined, limit: 50 }
     });
-    setRows(data);
+    setRows(data || []); // Ensure we always have an array
     setTotalPages(1); // No pagination needed since we get all results
   };
 
@@ -22,8 +22,8 @@ export default function Rankings() {
     load(); 
     // Load cities list
     api.get<string[]>("/public/cities")
-      .then(r => setCities(r.data))
-      .catch(() => {}); // Ignore errors, fallback to hardcoded cities
+      .then(r => setCities(r.data || [])) // Ensure we always have an array
+      .catch(() => setCities([])); // Fallback to empty array on error
   }, [city, page]);
 
   return (
