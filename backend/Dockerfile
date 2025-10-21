@@ -14,18 +14,25 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
 
 # Final stage
-FROM alpine:latest
+FROM alpine:3.20
+
+# Add a non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Install ca-certificates for HTTPS requests
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
+# Set the working directory to the user's home
+WORKDIR /home/appuser
 
-# Copy the binary from builder stage
-COPY --from=builder /app/main .
+# Copy the binary from builder stage and set ownership
+COPY --chown=appuser:appgroup --from=builder /app/main .
 
-# Create storage directory
-RUN mkdir -p ./storage
+# Create storage directory and set ownership
+RUN mkdir -p ./storage && chown -R appuser:appgroup ./storage
+
+# Switch to the non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8000
