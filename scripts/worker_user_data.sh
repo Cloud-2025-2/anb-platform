@@ -14,7 +14,7 @@ usermod -aG docker ubuntu
 runuser -l ubuntu -c '
   git clone https://github.com/Cloud-2025-2/anb-platform && \
   cd anb-platform/backend && \
-  docker build -t anb-worker:latest -f Dockerfile.worker . && \
+  docker build --no-cache -t anb-worker:latest -f Dockerfile.worker . && \
   docker run -d --restart always \
     -e POSTGRES_HOST="anb-database.cibipwvslz8o.us-east-1.rds.amazonaws.com" \
     -e POSTGRES_USER="postgres" \

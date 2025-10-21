@@ -14,7 +14,7 @@ usermod -aG docker ubuntu
 runuser -l ubuntu -c '
   git clone https://github.com/Cloud-2025-2/anb-platform && \
   cd anb-platform/backend && \
-  docker build -t anb-api:latest -f Dockerfile . && \
+  docker build --no-cache -t anb-api:latest -f Dockerfile . && \
   docker run -d --restart always -p 80:8000 \
     -e CORS_ALLOWED_ORIGINS="http://anb-platform-frontend.s3-website-us-east-1.amazonaws.com" \
     -e POSTGRES_HOST="anb-database.cibipwvslz8o.us-east-1.rds.amazonaws.com" \

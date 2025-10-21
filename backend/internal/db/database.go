@@ -20,7 +20,7 @@ func Connect() {
 		pass := getEnv("POSTGRES_PASSWORD", "proyecto1")
 		name := getEnv("POSTGRES_DB", "db")
 
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
 			host, user, pass, name, port)
 	}
 
@@ -39,4 +39,3 @@ func getEnv(key, def string) string {
 	}
 	return def
 }
-
