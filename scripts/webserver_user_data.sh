@@ -21,6 +21,6 @@ runuser -l ubuntu -c '
     -e POSTGRES_USER="postgres" \
     -e POSTGRES_PASSWORD="anb-platform123" \
     -e POSTGRES_DB="anb_platform" \
-    -e KAFKA_BROKERS="10.0.0.6:9092" \
+    -e KAFKA_BROKERS="10.0.0.17:9092" \
     --name api-server anb-api:latest
 '
