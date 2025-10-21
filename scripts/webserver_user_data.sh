@@ -21,4 +21,6 @@ cd anb-platform/backend
 docker build -t anb-api:latest -f Dockerfile .
 
 # Run the API container, mapping port 80 on the host to 8000 in the container
-docker run -d --restart always -p 80:8000 --name api-server anb-api:latest
+docker run -d --restart always -p 80:8000 \
+  -e CORS_ALLOWED_ORIGINS="http://anb-platform-frontend.s3-website-us-east-1.amazonaws.com" \
+  --name api-server anb-api:latest

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -18,6 +19,8 @@ type Config struct {
 	RedisPassword string
 	// Kafka
 	KafkaBrokers []string
+	// CORS
+	AllowedOrigins []string
 }
 
 func atoiEnv(k string, def int) int {
@@ -67,7 +70,15 @@ func Load() *Config {
 		RedisAddr:        getenv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:    os.Getenv("REDIS_PASSWORD"),
 		KafkaBrokers:     kafkaBrokers,
+		AllowedOrigins:   getOrigins(),
 	}
+}
+
+func getOrigins() []string {
+	if origins := os.Getenv("CORS_ALLOWED_ORIGINS"); origins != "" {
+		return strings.Split(origins, ",")
+	}
+	return []string{"http://localhost:5173", "http://localhost:3000"}
 }
 
 func getenv(k, def string) string {
