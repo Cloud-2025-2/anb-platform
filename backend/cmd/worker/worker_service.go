@@ -81,7 +81,17 @@ func (w *WorkerService) ProcessVideoWithID(videoID uuid.UUID, inputPath, outputP
 	}
 
 	// Generate the URL based on stored path
-	processedURL := fmt.Sprintf("/storage/%s", storedPath)
+	// For S3, use direct S3 URL; for local, use /storage/ path
+	s3Bucket := os.Getenv("S3_BUCKET")
+	awsRegion := os.Getenv("AWS_REGION")
+	var processedURL string
+	if s3Bucket != "" && awsRegion != "" {
+		// S3 URL format
+		processedURL = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", s3Bucket, awsRegion, storedPath)
+	} else {
+		// Local storage URL
+		processedURL = fmt.Sprintf("/storage/%s", storedPath)
+	}
 
 	// Update video record with processed information
 	now := time.Now()
