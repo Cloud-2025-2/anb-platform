@@ -31,7 +31,7 @@
 
 * [Video de sustentación](https://www.flexclip.com/es/share/14655886cL0lg4Psv7uKIaFWinLY4HgLuuRVYnWT.html)
 
-* [Documentación de pruebas](capacity-planning/pruebas_de_carga_entrega3.md)
+* [Documentación de pruebas](capacity-planning/pruebas_carga_proyecto4.md)
 
 
 
