@@ -40,7 +40,7 @@ echo -e "${GREEN} Credenciales configuradas${NC}"
 echo ""
 
 # Verificar conexión
-echo "🔍 Verificando conexión a AWS..."
+echo " Verificando conexión a AWS..."
 if aws sts get-caller-identity > /dev/null 2>&1; then
     echo -e "${GREEN}Conexión exitosa a AWS${NC}"
     echo ""
