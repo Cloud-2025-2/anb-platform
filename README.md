@@ -25,29 +25,15 @@
 
 * Video de sustentación
 
+## Entrega 4
 
-# Deployment
+* [Entrega4.pdf](docs/Entrega_4/Entrega4.md)
 
-## Local Development
-See [Entrega2.md](docs/Entrega_2/Entrega2.md) for local Docker Compose setup.
+* [Video de sustentación](https://www.flexclip.com/es/share/14655886cL0lg4Psv7uKIaFWinLY4HgLuuRVYnWT.html)
 
-## AWS Production Deployment
-For deploying to AWS with 3 EC2 instances (Webserver, Workers, NFS):
+* [Documentación de pruebas](capacity-planning/pruebas_carga_proyecto4.md)
 
-### Automated Deployment (Recommended)
-* **User Data Deployment**: [USER_DATA_DEPLOYMENT_GUIDE.md](USER_DATA_DEPLOYMENT_GUIDE.md) - Fully automated, zero-config setup
-  - Just paste scripts in EC2 user data and launch
-  - Instances configure themselves automatically
-  - ~20 minutes to fully operational
 
-### Manual Deployment
-* **Quick Start**: [AWS_DEPLOYMENT_QUICK_START.md](AWS_DEPLOYMENT_QUICK_START.md)
-* **Full Guide**: [docs/AWS_DEPLOYMENT.md](docs/AWS_DEPLOYMENT.md)
-
-### Architecture
-- **EC2 #1**: Nginx, Backend API, Frontend, PostgreSQL, Redis, Kafka
-- **EC2 #2**: Video processing workers (scalable)
-- **EC2 #3**: NFS shared storage
 
 # SonarQube
 https://sonarcloud.io/project/overview?id=Cloud-2025-2_anb-platform
