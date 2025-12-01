@@ -10,7 +10,7 @@ resource "aws_db_subnet_group" "main" {
 resource "aws_db_instance" "postgres" {
   identifier        = "${var.project_name}-${var.environment}-postgres"
   engine            = "postgres"
-  engine_version    = "15.4"
+  engine_version    = "15.5"
   instance_class    = "db.t3.micro"
   allocated_storage = 20
   storage_type      = "gp2"
@@ -24,19 +24,15 @@ resource "aws_db_instance" "postgres" {
   vpc_security_group_ids = [var.db_security_group_id]
   publicly_accessible    = false
 
-  # Multi-AZ for high availability
-  multi_az = false # Set to true for production
+  multi_az = false
 
-  # Backup configuration
   backup_retention_period = 7
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "mon:04:00-mon:05:00"
+  backup_window           = "03:00-04:00"
+  maintenance_window      = "mon:04:00-mon:05:00"
 
-  # Snapshot configuration
   skip_final_snapshot       = true
   final_snapshot_identifier = "${var.project_name}-${var.environment}-final-snapshot"
 
-  # Performance Insights (optional)
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
   tags = {
