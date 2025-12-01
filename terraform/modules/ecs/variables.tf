@@ -137,14 +137,3 @@ variable "cpu_target_value" {
   type        = number
   default     = 70
 }
-
-# 👉 NUEVO: ARNs de roles IAM EXISTENTES (NO se crean en Terraform)
-variable "ecs_task_execution_role_arn" {
-  description = "ARN of existing IAM role for ECS task execution"
-  type        = string
-}
-
-variable "ecs_task_role_arn" {
-  description = "ARN of existing IAM role for ECS tasks (app permissions)"
-  type        = string
-}
