@@ -1,4 +1,3 @@
-cat > modules/ecs/main.tf <<'EOF'
 #############################
 # ECS CLUSTER              #
 #############################
@@ -428,4 +427,4 @@ resource "aws_appautoscaling_policy" "worker_cpu" {
     scale_out_cooldown = 300
   }
 }
-EOF
+
