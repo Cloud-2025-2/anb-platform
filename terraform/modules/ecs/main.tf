@@ -1,18 +1,4 @@
-#############################
-# VARIABLES DE ROLES IAM   #
-#############################
-
-# Estos NO crean roles, solo reciben los ARNs de roles YA EXISTENTES
-variable "ecs_task_execution_role_arn" {
-  type        = string
-  description = "ARN del IAM Role existente usado como ECS Task Execution Role"
-}
-
-variable "ecs_task_role_arn" {
-  type        = string
-  description = "ARN del IAM Role existente usado como ECS Task Role (permisos app: S3/SQS/Logs)"
-}
-
+cat > modules/ecs/main.tf <<'EOF'
 #############################
 # ECS CLUSTER              #
 #############################
@@ -60,7 +46,7 @@ resource "aws_ecs_task_definition" "backend" {
   cpu                      = "512"
   memory                   = "1024"
 
-  # 👉 YA NO USAMOS aws_iam_role.*.arn
+  # Usamos roles pasados por variable (NO se crean en este módulo)
   execution_role_arn = var.ecs_task_execution_role_arn
   task_role_arn      = var.ecs_task_role_arn
 
@@ -174,7 +160,6 @@ resource "aws_ecs_service" "backend" {
 
   health_check_grace_period_seconds = 60
 
-  # OJO: aquí depende de un TG externo que viene por variable, pero Terraform lo acepta
   depends_on = [var.backend_target_group_arn]
 
   tags = {
@@ -443,3 +428,4 @@ resource "aws_appautoscaling_policy" "worker_cpu" {
     scale_out_cooldown = 300
   }
 }
+EOF
