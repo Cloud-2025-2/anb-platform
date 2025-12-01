@@ -1,4 +1,3 @@
-# ECS Cluster outputs
 output "cluster_name" {
   description = "ECS cluster name"
   value       = aws_ecs_cluster.main.name
@@ -62,13 +61,13 @@ output "worker_service_id" {
   value       = aws_ecs_service.worker.id
 }
 
-# IAM Role outputs (reexpone las variables, NO recursos internos)
+# IAM Role outputs
 output "ecs_task_execution_role_arn" {
-  description = "ECS task execution role ARN (existing role passed to module)"
-  value       = var.ecs_task_execution_role_arn
+  description = "ECS task execution role ARN"
+  value       = aws_iam_role.ecs_task_execution_role.arn
 }
 
 output "ecs_task_role_arn" {
-  description = "ECS task role ARN (existing role passed to module)"
-  value       = var.ecs_task_role_arn
+  description = "ECS task role ARN"
+  value       = aws_iam_role.ecs_task_role.arn
 }
