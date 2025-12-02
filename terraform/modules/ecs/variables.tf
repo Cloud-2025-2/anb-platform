@@ -137,3 +137,13 @@ variable "cpu_target_value" {
   type        = number
   default     = 70
 }
+
+variable "ecs_task_execution_role_arn" {
+  description = "Existing IAM role ARN for ECS task execution"
+  type        = string
+}
+
+variable "ecs_task_role_arn" {
+  description = "Existing IAM role ARN for ECS task role"
+  type        = string
+}
