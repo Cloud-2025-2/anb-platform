@@ -42,6 +42,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "video_storage" {
     id     = "delete-old-videos"
     status = "Enabled"
 
+    filter {
+      prefix = ""  # Aplica a todos los objetos del bucket
+    }
+
     expiration {
       days = 90
     }
