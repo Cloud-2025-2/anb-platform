@@ -60,14 +60,3 @@ output "worker_service_id" {
   description = "Worker service ID"
   value       = aws_ecs_service.worker.id
 }
-
-# IAM Role outputs
-output "ecs_task_execution_role_arn" {
-  description = "ECS task execution role ARN"
-  value       = aws_iam_role.ecs_task_execution_role.arn
-}
-
-output "ecs_task_role_arn" {
-  description = "ECS task role ARN"
-  value       = aws_iam_role.ecs_task_role.arn
-}
