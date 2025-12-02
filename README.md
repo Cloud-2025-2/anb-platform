@@ -38,7 +38,7 @@
 
 * [Entrega5.pdf](docs/Entrega_5/Entrega5.md)
 
-* [Video de sustentación]()
+* [Video de sustentación](https://youtu.be/0rlwcWZbMGU)
 
 * [Documentación de pruebas](docs/Entrega_5/pruebas_de_carga.md)
 
