@@ -34,6 +34,15 @@
 * [Documentación de pruebas](capacity-planning/pruebas_carga_proyecto4.md)
 
 
+## Entrega 5
+
+* [Entrega5.pdf]()
+
+* [Video de sustentación]()
+
+* [Documentación de pruebas]()
+
+
 
 # SonarQube
 https://sonarcloud.io/project/overview?id=Cloud-2025-2_anb-platform
