@@ -116,6 +116,10 @@ module "ecs" {
   vpc_id                 = module.networking.vpc_id
   private_subnet_ids     = module.networking.private_subnet_ids
   ecs_security_group_id  = module.security.ecs_security_group_id
+
+  ecs_task_execution_role_arn = "arn:aws:iam::${local.account_id}:role/LabRole"
+  ecs_task_role_arn           = "arn:aws:iam::${local.account_id}:role/LabRole"
+
   
   # ECR repositories
   backend_image_uri      = var.backend_image_uri
