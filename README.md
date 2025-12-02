@@ -40,7 +40,7 @@
 
 * [Video de sustentación]()
 
-* [Documentación de pruebas](docs/Entrega_5/pruebas de carga.md)
+* [Documentación de pruebas](docs/Entrega_5/prueba.md)
 
 
 
