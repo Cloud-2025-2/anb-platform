@@ -36,11 +36,11 @@
 
 ## Entrega 5
 
-* [Entrega5.pdf]()
+* [Entrega5.pdf](docs/Entrega 5/Entrega5.md)
 
 * [Video de sustentación]()
 
-* [Documentación de pruebas]()
+* [Documentación de pruebas](docs/Entrega 5/pruebas de carga.md)
 
 
 
